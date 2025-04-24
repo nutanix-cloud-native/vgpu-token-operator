@@ -1,0 +1,117 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+
+version: 2
+
+changelog:
+  use: github
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+  filters:
+    exclude:
+      - '^docs:'
+      - '^chore:'
+      - '^build:'
+builds:
+  - id: vgpu-token-operator
+    dir: ./cmd
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    flags:
+      - -trimpath
+    ldflags:
+      - -X 'k8s.io/component-base/version.buildDate={{ .CommitDate }}'
+      - -X 'k8s.io/component-base/version.gitCommit={{ .FullCommit }}'
+      - -X 'k8s.io/component-base/version.gitTreeState={{ .Env.GIT_TREE_STATE }}'
+      - -X 'k8s.io/component-base/version.gitVersion=v{{ trimprefix .Version "v" }}'
+      - -X 'k8s.io/component-base/version.major={{ .Major }}'
+      - -X 'k8s.io/component-base/version.minor={{ .Minor }}'
+      - -X 'k8s.io/component-base/version/verflag.programName={{ .ProjectName }}'
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    hooks:
+      post:
+        - |
+          sh -ec 'if [ {{ .IsSnapshot }} == true ] && [ {{ .Runtime.Goarch }} == {{ .Arch }} ]; then
+            env SOURCE_DATE_EPOCH=$(date +%s) \
+                KO_DATA_DATE_EPOCH=$(date +%s) \
+                KO_DOCKER_REPO=ko.local/{{ .ProjectName }} \
+                ko build \
+                  --bare \
+                  --platform linux/{{ .Arch }} \
+                  -t v{{ trimprefix .Version "v" }}-{{ .Arch }} \
+                  ./cmd
+          fi'
+dockers:
+  - image_templates:
+      - 'ghcr.io/nutanix-cloud-native/vgpu-token-copier::v{{ trimprefix .Version "v" }}-amd64'
+    use: buildx
+    dockerfile: ./docker/Dockerfile.tokencopy
+    extra_files:
+      - docker/gpu-token-copy.sh
+    goarch: amd64
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--pull"
+      - '--build-arg=VERSION=v{{ trimprefix .Version "v" }}'
+      - "--label=org.opencontainers.image.created={{.CommitDate}}"
+      - "--label=org.opencontainers.image.title=vgpu-token-copier"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+  - image_templates:
+      - 'ghcr.io/nutanix-cloud-native/vgpu-token-copier::v{{ trimprefix .Version "v" }}-arm64'
+    use: buildx
+    dockerfile: ./docker/Dockerfile.tokencopy
+    extra_files:
+      - docker/gpu-token-copy.sh
+    goarch: amd64
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--pull"
+      - '--build-arg=VERSION=v{{ trimprefix .Version "v" }}'
+      - "--label=org.opencontainers.image.created={{.CommitDate}}"
+      - "--label=org.opencontainers.image.title=vgpu-token-copier"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+
+docker_manifests:
+  - name_template: ghcr.io/nutanix-cloud-native/vgpu-token-copier:v{{ trimprefix .Version "v" }}
+    image_templates:
+      - ghcr.io/nutanix-cloud-native/vgpu-token-copier:v{{ trimprefix .Version "v" }}-amd64
+      - ghcr.io/nutanix-cloud-native/vgpu-token-copier:v{{ trimprefix .Version "v" }}-arm64
+
+kos:
+  - id: vgpu-token-operator
+    build: vgpu-token-operator
+    labels:
+      org.opencontainers.image.created: "{{ .CommitDate }}"
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.version: 'v{{ trimprefix .Version "v" }}'
+      org.opencontainers.image.source: "{{ .GitURL }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    repositories:
+      - ghcr.io/nutanix-cloud-native/vgpu-token-operator
+    bare: true
+    creation_time: "{{.CommitTimestamp}}"
+    ko_data_creation_time: "{{.CommitTimestamp}}"
+    tags:
+      - 'v{{ trimprefix .Version "v" }}'
+
+archives:
+  - name_template: '{{ .ProjectName }}_v{{ trimprefix .Version "v" }}_{{ .Os }}_{{ .Arch }}'
+    builds:
+      - vgpu-token-operator

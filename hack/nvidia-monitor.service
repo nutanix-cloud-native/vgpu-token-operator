@@ -1,0 +1,12 @@
+[Unit]
+Description=Monitor NVIDIA Client Configuration Token for changes and restart nvidia-gridd
+After=network.target
+
+[Service]
+ExecStart=/opt/monitor-nvidia.sh
+Restart=on-failure
+StandardOutput=append:/var/log/nvidia_token_monitor.log
+StandardError=append:/var/log/nvidia_token_monitor.log
+
+[Install]
+WantedBy=multi-user.target

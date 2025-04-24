@@ -1,0 +1,168 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Lint
+
+on:
+  push:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint-go:
+    name: Lint go code
+    runs-on:
+      - self-hosted-nutanix-medium
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.12.0
+        with:
+          enable-cache: true
+
+      - name: Export golang and golangci-lint versions
+        id: versions
+        run: |
+          echo "golangci-lint=$(devbox run -- golangci-lint version --format short)" >>"${GITHUB_OUTPUT}"
+          echo "golang=$(devbox run -- go version | grep -o "[[:digit:]]\+.[[:digit:]]\+\(.[[:digit:]]\+\)\?")" >>"${GITHUB_OUTPUT}"
+
+      - name: golangci-lint
+        uses: reviewdog/action-golangci-lint@v2
+        with:
+          fail_level: error
+          reporter: github-pr-review
+          golangci_lint_version: v${{ steps.versions.outputs.golangci-lint }}
+          go_version: v${{ steps.versions.outputs.golang }}
+          workdir: ${{ matrix.module }}
+          golangci_lint_flags: "--config=${{ github.workspace }}/.golangci.yml"
+
+  lint-gha:
+    runs-on:
+      - self-hosted-nutanix-medium
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: actionlint
+        uses: reviewdog/action-actionlint@v1
+        with:
+          fail_level: error
+          reporter: github-pr-review
+
+  pre-commit:
+    runs-on:
+      - self-hosted-nutanix-medium
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.12.0
+        with:
+          enable-cache: true
+
+      - name: Go cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Set up pre-commit cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-3|${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run pre-commit
+        run: devbox run -- make pre-commit
+        env:
+          SKIP: no-commit-to-branch,golangci-lint,actionlint-system
+
+  lint-test-helm:
+    runs-on:
+      - self-hosted-nutanix-medium
+    env:
+      KIND_CLUSTER_NAME: chart-testing
+      KIND_KUBECONFIG: ct-kind-kubeconfig
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.12.0
+        with:
+          enable-cache: true
+
+      - name: Run chart-testing (list-changed)
+        id: list-changed
+        run: |
+          changed="$(devbox run -- \
+            ct list-changed --config charts/ct-config.yaml \
+          )"
+          if [[ -n "$changed" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.list-changed.outputs.changed == 'true'
+        name: Run chart-testing (lint)
+        run: |
+          devbox run -- \
+            ct lint --config charts/ct-config.yaml
+
+      - if: steps.list-changed.outputs.changed == 'true'
+        name: Create kind cluster
+        run: devbox run -- make kind.create
+
+      - if: steps.list-changed.outputs.changed == 'true'
+        name: Build Docker images
+        run: devbox run -- make release-snapshot
+
+      - if: steps.list-changed.outputs.changed == 'true'
+        name: Export image tag
+        id: export-image-tag
+        run: echo test-image-tag="$(devbox run -- gojq -r .version dist/metadata.json)-$(devbox run -- go env GOARCH)" >> "$GITHUB_OUTPUT"
+
+      - if: steps.list-changed.outputs.changed == 'true'
+        name: Sideload docker image
+        run: |
+          devbox run -- \
+            kind load docker-image \
+              --name "${KIND_CLUSTER_NAME}" \
+              "ko.local/vgpu-token-operator:${{ steps.export-image-tag.outputs.test-image-tag }}"
+
+      - if: steps.list-changed.outputs.changed == 'true'
+        name: Run chart-testing (install)
+        run: |
+          devbox run -- \
+            ct install \
+              --config charts/ct-config.yaml \
+              --helm-extra-set-args "--set-string image.repository=ko.local/vgpu-token-operator --set-string image.tag=${{ steps.export-image-tag.outputs.test-image-tag }}"
+        env:
+          KUBECONFIG: ${{ env.KIND_KUBECONFIG }}
+
+      - if: steps.list-changed.outputs.changed == 'true' && always()
+        name: Delete chart-testing KinD cluster
+        run: |
+          devbox run -- make kind.delete
