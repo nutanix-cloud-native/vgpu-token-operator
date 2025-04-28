@@ -1,86 +1,264 @@
 // Copyright 2025 Nutanix. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-/*
-Copyright 2025.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package controller
 
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/errors"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	nkpv1alpha1 "github.com/nutanix-cloud-native/vgpu-token-operator/api/v1alpha1"
+	"github.com/nutanix-cloud-native/vgpu-token-operator/pkg/generator"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gstruct"
 )
 
 var _ = Describe("VGPUToken Controller", func() {
-	Context("When reconciling a resource", func() {
-		const resourceName = "test-resource"
-
-		ctx := context.Background()
-
-		typeNamespacedName := types.NamespacedName{
-			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
+	var (
+		ctx                      context.Context
+		testNamespace            string
+		ns                       *corev1.Namespace
+		err                      error
+		vGPUTokenPropagatorImage = "ghcr.io/nutanix-cloud-native/vgpu-token-copier:v0.0.0-dev.0"
+	)
+	BeforeEach(func() {
+		ctx = context.Background()
+		ns, err = TestEnv.CreateNamespace(ctx, "test")
+		Expect(err).ToNot(HaveOccurred(), "failed to create test namespace")
+		testNamespace = ns.Name
+		err = (&VGPUTokenReconciler{
+			Client:                   TestEnv.GetClient(),
+			Scheme:                   TestEnv.GetScheme(),
+			VGPUTokenPropagatorImage: vGPUTokenPropagatorImage,
+		}).SetupWithManager(TestEnv.Manager)
+	})
+	AfterEach(func() {
+		ctx = context.Background()
+		err = TestEnv.Cleanup(ctx, ns)
+		Expect(err).ToNot(HaveOccurred(), "failed to create test namespace")
+	})
+	It("should fail if the secret is not present", func() {
+		name := "no-secret"
+		token := nkpv1alpha1.VGPUToken{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: testNamespace,
+			},
+			Spec: nkpv1alpha1.VGPUTokenSpec{
+				TokenSecret: corev1.LocalObjectReference{
+					Name: "not-here",
+				},
+			},
 		}
-		vgputoken := &nkpv1alpha1.VGPUToken{}
-
-		BeforeEach(func() {
-			By("creating the custom resource for the Kind VGPUToken")
-			err := k8sClient.Get(ctx, typeNamespacedName, vgputoken)
-			if err != nil && errors.IsNotFound(err) {
-				resource := &nkpv1alpha1.VGPUToken{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: "default",
-					},
-					// TODO(user): Specify other spec details if needed.
+		err := TestEnv.CreateObj(ctx, &token)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(func() []metav1.Condition {
+			err = TestEnv.Client.Get(ctx, ctrlclient.ObjectKeyFromObject(&token), &token)
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil
 				}
-				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
+				Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting token.")
+
 			}
-		})
+			return token.Status.Conditions
+		}).Should(
+			ContainElement(
+				gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+					"Type":   Equal(nkpv1alpha1.ConditionTokenSecret),
+					"Reason": Equal(nkpv1alpha1.ReasonTokenSecretNotFound),
+				}),
+			),
+		)
+	})
+	It("should pass if secret is present", func() {
+		name := "has-secret"
+		secret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: testNamespace,
+			},
+		}
+		err := TestEnv.CreateObj(ctx, &secret)
+		Expect(err).NotTo(HaveOccurred())
+		token := nkpv1alpha1.VGPUToken{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: testNamespace,
+			},
+			Spec: nkpv1alpha1.VGPUTokenSpec{
+				TokenSecret: corev1.LocalObjectReference{
+					Name: name,
+				},
+			},
+		}
+		err = TestEnv.CreateObj(ctx, &token)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(func() []metav1.Condition {
+			err = TestEnv.Client.Get(ctx, ctrlclient.ObjectKeyFromObject(&token), &token)
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil
+				}
+				Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting token.")
 
-		AfterEach(func() {
-			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &nkpv1alpha1.VGPUToken{}
-			err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Cleanup the specific resource instance VGPUToken")
-			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
-		})
-		It("should successfully reconcile the resource", func() {
-			By("Reconciling the created resource")
-			controllerReconciler := &VGPUTokenReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
 			}
+			return token.Status.Conditions
+		}).Should(
+			ContainElement(
+				gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+					"Type":   Equal(nkpv1alpha1.ConditionTokenSecret),
+					"Status": Equal(metav1.ConditionTrue),
+				}),
+			),
+		)
+		ds := appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      generator.FormatDaemonSetName(token.GetName()),
+				Namespace: testNamespace,
+			},
+		}
+		Eventually(func() *appsv1.DaemonSet {
+			err = TestEnv.Client.Get(ctx, ctrlclient.ObjectKeyFromObject(&ds), &ds)
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil
+				}
+				Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting token.")
 
-			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
-			})
-			Expect(err).NotTo(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
-		})
+			}
+			return &ds
+		}).Should(
+			WithTransform(func(ds *appsv1.DaemonSet) corev1.PodSpec {
+				return ds.Spec.Template.Spec
+			}, &gstruct.FieldsMatcher{
+				Fields: gstruct.Fields{
+					"Containers": ContainElement(&gstruct.FieldsMatcher{
+						Fields: gstruct.Fields{
+							"Name":  Equal("vgpu-token-propagater"),
+							"Image": Equal(vGPUTokenPropagatorImage),
+							"VolumeMounts": And(
+								HaveLen(2),
+								ContainElement(&gstruct.FieldsMatcher{
+									Fields: gstruct.Fields{
+										"Name":      Equal(generator.HostTokenVolumeName),
+										"MountPath": Equal("/host-token"),
+									},
+									IgnoreExtras:  true,
+									IgnoreMissing: true,
+								}),
+								ContainElement(&gstruct.FieldsMatcher{
+									Fields: gstruct.Fields{
+										"Name":      Equal(generator.SecretVolumeName),
+										"MountPath": Equal("/config"),
+									},
+									IgnoreExtras:  true,
+									IgnoreMissing: true,
+								}),
+							),
+							"NodeSelector": Equal(&gstruct.FieldsMatcher{
+								Fields: gstruct.Fields{
+									"nvidia.com/vgpu.present": Equal("true"),
+								},
+							}),
+						},
+						IgnoreExtras:  true,
+						IgnoreMissing: true,
+					}),
+					"Volumes": And(
+						HaveLen(2),
+						ContainElement(&gstruct.FieldsMatcher{
+							Fields: gstruct.Fields{
+								"Name": Equal(generator.HostTokenVolumeName),
+								"HostPath": &gstruct.FieldsMatcher{
+									Fields: gstruct.Fields{
+										"Path": Equal(token.Spec.HostDirectoryPath),
+									},
+									IgnoreExtras:  true,
+									IgnoreMissing: true,
+								},
+							},
+							IgnoreExtras:  true,
+							IgnoreMissing: true,
+						}),
+						ContainElement(&gstruct.FieldsMatcher{
+							Fields: gstruct.Fields{
+								"Name": Equal(generator.SecretVolumeName),
+								"Secret": &gstruct.FieldsMatcher{
+									IgnoreMissing: true,
+									IgnoreExtras:  true,
+									Fields: gstruct.Fields{
+										"SecretName": Equal(token.Spec.TokenSecret.Name),
+									},
+								},
+							},
+							IgnoreExtras:  true,
+							IgnoreMissing: true,
+						}),
+					),
+				},
+				IgnoreExtras:  true,
+				IgnoreMissing: true,
+			}),
+			"DaemonSet should have expected pod spec",
+		)
+		role := rbacv1.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      generator.DefaultDaemonSetRoleName,
+				Namespace: testNamespace,
+			},
+		}
+		Eventually(func() *rbacv1.Role {
+			err = TestEnv.Client.Get(ctx, ctrlclient.ObjectKeyFromObject(&role), &role)
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil
+				}
+				Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting role.")
+
+			}
+			return &role
+		}).ShouldNot(BeNil())
+		roleBinding := rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      generator.DefaultDaemonSetRoleName,
+				Namespace: testNamespace,
+			},
+		}
+		Eventually(func() *rbacv1.RoleBinding {
+			err = TestEnv.Client.Get(ctx, ctrlclient.ObjectKeyFromObject(&roleBinding), &roleBinding)
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil
+				}
+				Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting roleBinding.")
+
+			}
+			return &roleBinding
+		}).ShouldNot(BeNil())
+		sa := corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      generator.DefaultDaemonSetRoleName,
+				Namespace: testNamespace,
+			},
+		}
+		Eventually(func() *corev1.ServiceAccount {
+			err = TestEnv.Client.Get(ctx, ctrlclient.ObjectKeyFromObject(&sa), &sa)
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil
+				}
+				Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting service account.")
+
+			}
+			return &sa
+		}).ShouldNot(BeNil())
 	})
 })

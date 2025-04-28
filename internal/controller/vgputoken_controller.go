@@ -75,7 +75,7 @@ func (r *VGPUTokenReconciler) reconcileNormal(
 		ctx,
 		ctrlclient.ObjectKey{
 			Name:      vgpuToken.Spec.TokenSecret.Name,
-			Namespace: vgpuToken.Spec.TokenSecret.Namespace,
+			Namespace: vgpuToken.GetNamespace(),
 		},
 		&secretForDaemonSet,
 	)
@@ -180,6 +180,12 @@ func reconcileOwnedResource[T ctrlclient.Object](
 				return gotObj, fmt.Errorf("%s: %w", errMsg, createErr)
 			}
 			logger.Info("Resource created successfully.")
+			setCondition(
+				&cond,
+				metav1.ConditionTrue,
+				nkpv1alpha1.ReasonCreateSuccess,
+				fmt.Sprintf("%s %s created successfully", resourceTypeName, desiredObj.GetName()),
+			)
 			return desiredObj, nil
 		} else {
 			errMsg := fmt.Sprintf("failed to get %s", resourceTypeName)
@@ -372,10 +378,7 @@ func tokenSecretIndexer(obj ctrlclient.Object) []string {
 	if !ok {
 		return nil
 	}
-	refNamespace := vgpuToken.Spec.TokenSecret.Namespace
-	if refNamespace == "" {
-		refNamespace = obj.GetNamespace()
-	}
+	refNamespace := vgpuToken.GetNamespace()
 	return []string{fmt.Sprintf("%s/%s", refNamespace, vgpuToken.Spec.TokenSecret.Name)}
 }
 

@@ -96,7 +96,7 @@ func GenerateDaemonSetForVGPUToken(
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: token.Spec.NodeSelector,
+				MatchLabels: labels,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -106,6 +106,7 @@ func GenerateDaemonSetForVGPUToken(
 					PriorityClassName:            "system-cluster-critical",
 					Tolerations:                  tolerations,
 					ServiceAccountName:           DefaultDaemonSetRoleName,
+					NodeSelector:                 token.Spec.NodeSelector,
 					AutomountServiceAccountToken: ptr.To(false),
 					Containers: []corev1.Container{
 						tokenPropagatorContainer,

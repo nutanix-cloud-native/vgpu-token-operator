@@ -15,6 +15,7 @@
     "goreleaser@latest",
     "chart-testing@latest",
     "gojq@latest",
-    "ko@latest"
+    "ko@latest",
+    "envsubst@latest"
   ]
 }

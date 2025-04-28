@@ -27,8 +27,9 @@ import (
 // VGPUTokenSpec defines how to find the token configmap and propagate it to nodes that use a set of labels.
 type VGPUTokenSpec struct {
 	// TokenConfigmap refers to the configmap that contains the token contents
+	// this must be in the same namesapce as the token object
 	// +kubebuilder:validation:Required
-	TokenSecret corev1.SecretReference `json:"tokenSecret"`
+	TokenSecret corev1.LocalObjectReference `json:"tokenSecret"`
 
 	// HostDirectoryPath refers to the path to mount the Token on for guest VMs.
 	// +kubebuilder:validation:Optional

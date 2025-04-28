@@ -62,10 +62,6 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
-.PHONY: test
-test: go-generate fmt vet setup-envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
-
 # TODO(user): To use a different vendor for e2e tests, modify the setup under 'tests/e2e'.
 # The default setup assumes Kind is pre-installed and builds/loads the Manager Docker image locally.
 # CertManager is installed by default; skip with:
@@ -88,10 +84,6 @@ lint:
 .PHONY: build
 build: go-generate fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/main.go
-
-.PHONY: run
-run: go-generate fmt vet ## Run a controller from your host.
-	go run ./cmd/main.go
 
 # If you wish to build the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.
@@ -121,12 +113,6 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	- $(CONTAINER_TOOL) buildx rm vgpu-token-operator-builder
 	rm Dockerfile.cross
 
-.PHONY: build-installer
-build-installer: go-generate
-	mkdir -p dist
-	cd config/manager && kustomize edit set image controller=${IMG}
-	kustomize build config/default > dist/install.yaml
-
 ##@ Deployment
 
 ifndef ignore-not-found
@@ -150,16 +136,11 @@ deploy: go-generate ## Deploy controller to the K8s cluster specified in ~/.kube
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	kustomize build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
-
-
-ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
-
-
 .PHONY: setup-envtest
 setup-envtest:
-	@echo "Setting up envtest binaries for Kubernetes version $(ENVTEST_K8S_VERSION)..."
-	setup-envtest use $(ENVTEST_K8S_VERSION) -p path || { \
-		echo "Error: Failed to set up envtest binaries for version $(ENVTEST_K8S_VERSION)."; \
-		exit 1; \
-	}
+	$(eval KUBEBUILDER_ASSETS := $(shell setup-envtest use $(ENVTEST_K8S_VERSION) -p path))
+	export KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS)
 
+.PHONY: test
+test: setup-envtest go-generate
+	go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
