@@ -51,6 +51,7 @@ spec:
                 additionalProperties:
                   type: string
                 default:
+                  nvidia.com/gpu.deploy.driver: pre-installed
                   nvidia.com/vgpu.present: "true"
                 description: NodeSelector refers to label selectors for finding the
                   correct nodes to propagate the token to

@@ -4,12 +4,20 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: manager-role
+  name: vgpu-token-operator-manager-role
 rules:
 - apiGroups:
-  - nkp.nkp.nutanix.com
+  - ""
   resources:
-  - vgpulicensevalidators
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
   verbs:
   - create
   - delete
@@ -19,16 +27,56 @@ rules:
   - update
   - watch
 - apiGroups:
-  - nkp.nkp.nutanix.com
+  - apps
+  resources:
+  - daemonsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - nkp.nutanix.com
+  resources:
+  - vgpulicensevalidators
+  - vgputokens
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - nkp.nutanix.com
   resources:
   - vgpulicensevalidators/finalizers
+  - vgputokens/finalizers
   verbs:
   - update
 - apiGroups:
-  - nkp.nkp.nutanix.com
+  - nkp.nutanix.com
   resources:
   - vgpulicensevalidators/status
+  - vgputokens/status
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

@@ -4,7 +4,7 @@ set -exou pipefail
 CT_CONFIG="charts/ct-config.yaml"
 export KIND_CLUSTER_NAME="chart-testing"
 IMAGE_REPO="ko.local/vgpu-token-operator"
-COPY_IMAGE_REPO="ghcr.io/nutanix-cloud-native/vgpu-token-copier"
+COPY_IMAGE_REPO="docker.io/mesosphere/vgpu-token-copier"
 VERSION=$(gojq -r .version dist/metadata.json)
 ARCH=$(go env GOARCH)
 IMAGE_TAG="${VERSION}-${ARCH}"
@@ -36,6 +36,7 @@ ct lint --config "$CT_CONFIG"
 
 echo "Creating KinD cluster..."
 make kind.create
+make kind.kubeconfig
 CLEANUP_CLUSTER=1
 
 echo "Building Docker images..."
@@ -52,6 +53,7 @@ kind load docker-image \
 
 ct install \
   --config "$CT_CONFIG" \
-  --helm-extra-set-args "--set-string controllerManager.container.image.repository=${IMAGE_REPO} --set-string controllerManager.container.image.tag=v${IMAGE_TAG} --set-string vgpuCopy.image=${COPY_IMAGE_REPO}:v${IMAGE_TAG}"
+  --helm-extra-set-args \
+  "--set-string controllerManager.container.image.repository=${IMAGE_REPO} --set-string controllerManager.container.image.tag=v${IMAGE_TAG} --set-string vgpuCopy.image=${COPY_IMAGE_REPO}:v${IMAGE_TAG}"
 
 echo "Chart testing completed successfully!"

@@ -1,5 +1,6 @@
 GORELEASER_PARALLELISM ?= $(shell nproc --ignore=1)
 GORELEASER_VERBOSE ?= false
+GORELEASER_PUSH_SNAPSHOT_IMAGES ?= false # GORELEASER_PUSH_SNAPSHOT_IMAGES is a variable used to determine whethre or not to push to nutanix harbor
 
 ifndef GORELEASER_CURRENT_TAG
 export GORELEASER_CURRENT_TAG=$(GIT_TAG)
@@ -19,6 +20,7 @@ build-snapshot: go-generate ; $(info $(M) building snapshot $*)
 .PHONY: release-snapshot
 release-snapshot: ## Builds a snapshot release with goreleaser
 release-snapshot: go-generate ; $(info $(M) building snapshot release $*)
+	GORELEASER_PUSH_SNAPSHOT_IMAGES=$(GORELEASER_PUSH_SNAPSHOT_IMAGES) \
 	goreleaser --verbose=$(GORELEASER_VERBOSE) \
 		release \
 		--snapshot \

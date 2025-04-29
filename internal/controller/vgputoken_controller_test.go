@@ -163,14 +163,13 @@ var _ = Describe("VGPUToken Controller", func() {
 									IgnoreMissing: true,
 								}),
 							),
-							"NodeSelector": Equal(&gstruct.FieldsMatcher{
-								Fields: gstruct.Fields{
-									"nvidia.com/vgpu.present": Equal("true"),
-								},
-							}),
 						},
 						IgnoreExtras:  true,
-						IgnoreMissing: true,
+						IgnoreMissing: false,
+					}),
+					"NodeSelector": gstruct.MatchKeys(0, gstruct.Keys{
+						"nvidia.com/vgpu.present":      Equal("true"),
+						"nvidia.com/gpu.deploy.driver": Equal("pre-installed"),
 					}),
 					"Volumes": And(
 						HaveLen(2),

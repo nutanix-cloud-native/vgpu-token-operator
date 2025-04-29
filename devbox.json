@@ -17,6 +17,7 @@
     "gojq@latest",
     "ko@latest",
     "envsubst@latest",
-    "kind@latest"
+    "kind@latest",
+    "gotestsum@latest"
   ]
 }
