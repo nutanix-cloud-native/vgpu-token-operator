@@ -4,7 +4,6 @@
 KIND_DIR := $(REPO_ROOT)/.local/kind
 
 KIND_CLUSTER_NAME ?= $(GITHUB_REPOSITORY)-dev
-KIND_KUBECONFIG ?= $(KIND_DIR)/$(KIND_CLUSTER_NAME)/kubeconfig
 
 KINDEST_NODE_IMAGE ?= ghcr.io/mesosphere/kind-node
 KINDEST_NODE_VERSION_v1.30 ?= v1.30.10
@@ -26,12 +25,7 @@ kind.recreate: kind.delete kind.create
 .PHONY: kind.create
 kind.create: ## Creates new KinD cluster
 kind.create: ; $(info $(M) creating kind cluster - $(KIND_CLUSTER_NAME))
-	(kind get clusters 2>/dev/null | grep -Eq '^$(KIND_CLUSTER_NAME)$$' && echo '$(KIND_CLUSTER_NAME) already exists') || \
-		env KUBECONFIG=$(KIND_KUBECONFIG) $(REPO_ROOT)/hack/kind/create-cluster.sh \
-		  --cluster-name $(KIND_CLUSTER_NAME) \
-		  --kindest-image $(KINDEST_IMAGE) \
-		  --output-dir $(KIND_DIR)/$(KIND_CLUSTER_NAME) \
-		  --base-config $(REPO_ROOT)/hack/kind/kind-base-config.yaml
+	(kind get clusters 2>/dev/null | grep -Eq '^$(KIND_CLUSTER_NAME)$$' && echo '$(KIND_CLUSTER_NAME) already exists') || KUBECONFIG=$(KIND_KUBECONFIG) kind create cluster  --name $(KIND_CLUSTER_NAME) --image $(KINDEST_IMAGE)
 
 .PHONY: kind.delete
 kind.delete: ## Deletes KinD cluster

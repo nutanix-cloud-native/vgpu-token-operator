@@ -53,7 +53,7 @@ builds:
           fi'
 dockers:
   - image_templates:
-      - 'ghcr.io/nutanix-cloud-native/vgpu-token-copier::v{{ trimprefix .Version "v" }}-amd64'
+      - 'docker.io/faiq/vgpu-token-copier:v{{ trimprefix .Version "v" }}-amd64'
     use: buildx
     dockerfile: ./docker/Dockerfile.tokencopy
     extra_files:
@@ -69,7 +69,7 @@ dockers:
       - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
       - "--label=org.opencontainers.image.source={{.GitURL}}"
   - image_templates:
-      - 'ghcr.io/nutanix-cloud-native/vgpu-token-copier::v{{ trimprefix .Version "v" }}-arm64'
+      - 'docker.io/faiq/vgpu-token-copier:v{{ trimprefix .Version "v" }}-arm64'
     use: buildx
     dockerfile: ./docker/Dockerfile.tokencopy
     extra_files:
@@ -86,10 +86,10 @@ dockers:
       - "--label=org.opencontainers.image.source={{.GitURL}}"
 
 docker_manifests:
-  - name_template: ghcr.io/nutanix-cloud-native/vgpu-token-copier:v{{ trimprefix .Version "v" }}
+  - name_template: docker.io/faiq/vgpu-token-copier:v{{ trimprefix .Version "v" }}
     image_templates:
-      - ghcr.io/nutanix-cloud-native/vgpu-token-copier:v{{ trimprefix .Version "v" }}-amd64
-      - ghcr.io/nutanix-cloud-native/vgpu-token-copier:v{{ trimprefix .Version "v" }}-arm64
+      - docker.io/faiq/vgpu-token-copier:v{{ trimprefix .Version "v" }}-amd64
+      - docker.io/faiq/vgpu-token-copier:v{{ trimprefix .Version "v" }}-arm64
 
 kos:
   - id: vgpu-token-operator
@@ -104,7 +104,7 @@ kos:
       - linux/amd64
       - linux/arm64
     repositories:
-      - ghcr.io/nutanix-cloud-native/vgpu-token-operator
+      - docker.io/faiq/vgpu-token-operator
     bare: true
     creation_time: "{{.CommitTimestamp}}"
     ko_data_creation_time: "{{.CommitTimestamp}}"

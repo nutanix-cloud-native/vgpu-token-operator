@@ -1,4 +1,4 @@
-FROM alphine:3.21
+FROM alpine:3.21
 VOLUME config
 VOLUME host-token
 COPY ./docker/gpu-token-copy.sh /opt/gpu-token-copy.sh

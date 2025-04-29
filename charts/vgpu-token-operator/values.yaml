@@ -1,14 +1,9 @@
-# [MANAGER]: Manager Deployment Configurations
 controllerManager:
   replicas: 1
   container:
     image:
       repository: controller
       tag: latest
-    args:
-      - "--leader-elect"
-      - "--metrics-bind-address=:8443"
-      - "--health-probe-bind-address=:8081"
     resources:
       limits:
         cpu: 500m
@@ -40,7 +35,9 @@ controllerManager:
   terminationGracePeriodSeconds: 10
   serviceAccountName: vgpu-token-operator-controller-manager
 
-# [RBAC]: To enable RBAC (Permissions) configurations
+vgpuCopy:
+  image: "ghcr.io/nutanix-cloud-native/vgpu-token-copier:latest"
+
 rbac:
   enable: true
 

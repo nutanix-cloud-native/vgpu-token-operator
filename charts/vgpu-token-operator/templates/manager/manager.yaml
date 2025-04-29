@@ -28,11 +28,12 @@ spec:
       containers:
         - name: manager
           args:
-            {{- range .Values.controllerManager.container.args }}
-            - {{ . }}
-            {{- end }}
+            - "--leader-elect"
+            - "--metrics-bind-address=:8443"
+            - "--health-probe-bind-address=:8081"
+            - "--vgpu-propagator-image={{ .Values.vgpuCopy.image }}"
           command:
-            - /manager
+            - /ko-app/cmd
           image: {{ .Values.controllerManager.container.image.repository }}:{{ .Values.controllerManager.container.image.tag }}
           {{- if .Values.controllerManager.container.env }}
           env:

@@ -113,29 +113,6 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	- $(CONTAINER_TOOL) buildx rm vgpu-token-operator-builder
 	rm Dockerfile.cross
 
-##@ Deployment
-
-ifndef ignore-not-found
-  ignore-not-found = false
-endif
-
-.PHONY: install
-install: go-generate
-	kustomize build config/crd | kubectl apply -f -
-
-.PHONY: uninstall
-uninstall: go-generate  ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	kustomize build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
-
-.PHONY: deploy
-deploy: go-generate ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && kustomize edit set image controller=${IMG}
-	kustomize build config/default | kubectl apply -f -
-
-.PHONY: undeploy
-undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	kustomize build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
-
 .PHONY: setup-envtest
 setup-envtest:
 	$(eval KUBEBUILDER_ASSETS := $(shell setup-envtest use $(ENVTEST_K8S_VERSION) -p path))

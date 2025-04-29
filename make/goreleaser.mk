@@ -15,3 +15,13 @@ build-snapshot: go-generate ; $(info $(M) building snapshot $*)
 		--parallelism=$(GORELEASER_PARALLELISM) \
 		--config=<(env GOOS=$(shell go env GOOS) gojq --yaml-input --yaml-output '.builds[0].goos |= (. + [env.GOOS] | unique)' .goreleaser.yaml) \
 		$(if $(BUILD_ALL),,--single-target)
+
+.PHONY: release-snapshot
+release-snapshot: ## Builds a snapshot release with goreleaser
+release-snapshot: go-generate ; $(info $(M) building snapshot release $*)
+	goreleaser --verbose=$(GORELEASER_VERBOSE) \
+		release \
+		--snapshot \
+		--clean \
+		--parallelism=$(GORELEASER_PARALLELISM) \
+		--timeout=60m

@@ -43,7 +43,7 @@ func main() {
 	var secureMetrics bool
 	var enableHTTP2 bool
 	var tlsOpts []func(*tls.Config)
-	var vgpuTokenPropogatorImage string
+	var vgpuTokenPropagatorImage string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -77,8 +77,8 @@ func main() {
 		Development: true,
 	}
 	flag.StringVar(
-		&vgpuTokenPropogatorImage,
-		"vgpu-token-propogator-image",
+		&vgpuTokenPropagatorImage,
+		"vgpu-propagator-image",
 		"",
 		"The default image used to propagate vgpu tokens",
 	)
@@ -203,7 +203,7 @@ func main() {
 	if err = (&controller.VGPUTokenReconciler{
 		Client:                   mgr.GetClient(),
 		Scheme:                   mgr.GetScheme(),
-		VGPUTokenPropagatorImage: vgpuTokenPropogatorImage,
+		VGPUTokenPropagatorImage: vgpuTokenPropagatorImage,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "VGPUToken")
 		os.Exit(1)

@@ -16,6 +16,7 @@
     "chart-testing@latest",
     "gojq@latest",
     "ko@latest",
-    "envsubst@latest"
+    "envsubst@latest",
+    "kind@latest"
   ]
 }
