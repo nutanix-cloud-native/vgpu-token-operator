@@ -4,8 +4,8 @@ CHART_DIR := charts/$(RELEASE_NAME)
 OCI_REPOSITORY ?= harbor.eng.nutanix.com/nkp
 
 .PHONY: helm-install-snapshot
-helm-install-snapshot: export GORELEASER_PUSH_SNAPSHOT_IMAGES=true
-helm-install-snapshot:  helm-dependencies release-snapshot
+helm-install-snapshot:
+helm-install-snapshot:  helm-dependencies release-snapshot-images
 	helm upgrade --install $(RELEASE_NAME) $(CHART_DIR) \
 		--set-string controllerManager.container.image.repository=$(OCI_REPOSITORY)/vgpu-token-operator \
 		--set-string controllerManager.container.image.tag=v$(shell gojq -r .version dist/metadata.json) \
