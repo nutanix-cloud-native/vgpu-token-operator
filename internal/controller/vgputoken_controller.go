@@ -6,6 +6,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -24,6 +25,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/go-logr/logr"
+	"github.com/google/go-cmp/cmp"
 	nkpv1alpha1 "github.com/nutanix-cloud-native/vgpu-token-operator/api/v1alpha1"
 	"github.com/nutanix-cloud-native/vgpu-token-operator/pkg/generator"
 	"github.com/nutanix-cloud-native/vgpu-token-operator/pkg/k8s/client"
@@ -146,7 +149,7 @@ func reconcileOwnedResource[T ctrlclient.Object](
 	conditionType string,
 	generateFunc func(string) T,
 	newEmptyObj func() T,
-	shouldUpdateFunc func(got T) bool,
+	shouldUpdateFunc func(logger logr.Logger, want, got T) bool,
 ) (T, error) {
 	logger := logf.FromContext(ctx)
 	logger.Info(fmt.Sprintf("Reconciling resource %s", resourceTypeName))
@@ -209,7 +212,7 @@ func reconcileOwnedResource[T ctrlclient.Object](
 			return gotObj, fmt.Errorf("%s: %w", errMsg, getErr)
 		}
 	}
-	if shouldUpdateFunc(gotObj) {
+	if shouldUpdateFunc(logger, desiredObj, gotObj) {
 		logger.Info("Applying desired state to resource.")
 		if err := controllerutil.SetOwnerReference(token, desiredObj, reconciler.Scheme); err != nil {
 			errMsg := fmt.Sprintf("failed to set owner reference for apply on %s", resourceTypeName)
@@ -278,7 +281,8 @@ func (r *VGPUTokenReconciler) reconcileServiceAccount(
 		func() *corev1.ServiceAccount {
 			return &corev1.ServiceAccount{}
 		},
-		func(a *corev1.ServiceAccount) bool {
+		func(logger logr.Logger, desired, got *corev1.ServiceAccount) bool {
+			logger.Info("Always forcing an overwrite")
 			return true
 		},
 	)
@@ -299,7 +303,8 @@ func (r *VGPUTokenReconciler) reconcileRole(
 		func() *rbacv1.Role {
 			return &rbacv1.Role{}
 		},
-		func(a *rbacv1.Role) bool {
+		func(logger logr.Logger, desired, got *rbacv1.Role) bool {
+			logger.Info("Always forcing an overwrite")
 			return true
 		},
 	)
@@ -320,7 +325,8 @@ func (r *VGPUTokenReconciler) reconcileRoleBinding(
 		func() *rbacv1.RoleBinding {
 			return &rbacv1.RoleBinding{}
 		},
-		func(a *rbacv1.RoleBinding) bool {
+		func(logger logr.Logger, desired, got *rbacv1.RoleBinding) bool {
+			logger.Info("Always forcing an overwrite")
 			return true
 		},
 	)
@@ -349,8 +355,12 @@ func (r *VGPUTokenReconciler) reconcileDaemonSet(
 		func() *appsv1.DaemonSet {
 			return &appsv1.DaemonSet{}
 		},
-		func(ds *appsv1.DaemonSet) bool {
-			vols := ds.Spec.Template.Spec.Volumes
+		func(logger logr.Logger, wantDS, gotDS *appsv1.DaemonSet) bool {
+			if !reflect.DeepEqual(wantDS.Spec.Template.Spec, gotDS.Spec.Template.Spec) {
+				diff := cmp.Diff(wantDS.Spec.Template.Spec, gotDS.Spec.Template.Spec)
+				logger.Info(fmt.Sprintf("got diff %v \n", diff))
+			}
+			vols := gotDS.Spec.Template.Spec.Volumes
 			for i := range vols {
 				if vols[i].VolumeSource.Secret != nil &&
 					vols[i].Name == generator.SecretVolumeName &&
