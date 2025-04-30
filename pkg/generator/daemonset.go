@@ -55,6 +55,9 @@ func GenerateDaemonSetForVGPUToken(
 				ReadOnly:  true,
 			},
 		},
+		TerminationMessagePath:   "/dev/termination-log",
+		TerminationMessagePolicy: "File",
+		ImagePullPolicy:          "IfNotPresent",
 	}
 	volumes := []corev1.Volume{
 		{

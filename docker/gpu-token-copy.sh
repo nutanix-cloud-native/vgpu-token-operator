@@ -7,6 +7,8 @@ while true; do
     mv /host-token/.tmp /host-token/client_configuration_token.tok &&
     chmod 644 /host-token/client_configuration_token.tok &&
     echo "Token updated successfully at $(date)"
+  else
+    echo "No change detected"
   fi
   sleep 2
 done

@@ -356,9 +356,10 @@ func (r *VGPUTokenReconciler) reconcileDaemonSet(
 			return &appsv1.DaemonSet{}
 		},
 		func(logger logr.Logger, wantDS, gotDS *appsv1.DaemonSet) bool {
-			if !reflect.DeepEqual(wantDS.Spec.Template.Spec, gotDS.Spec.Template.Spec) {
-				diff := cmp.Diff(wantDS.Spec.Template.Spec, gotDS.Spec.Template.Spec)
+			if !reflect.DeepEqual(wantDS.Spec.Template.Spec.Containers, gotDS.Spec.Template.Spec.Containers) {
+				diff := cmp.Diff(wantDS.Spec.Template.Spec.Containers, gotDS.Spec.Template.Spec.Containers)
 				logger.Info(fmt.Sprintf("got diff %v \n", diff))
+				return true
 			}
 			vols := gotDS.Spec.Template.Spec.Volumes
 			for i := range vols {
