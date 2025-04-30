@@ -20,6 +20,53 @@ import (
 	"github.com/onsi/gomega/gstruct"
 )
 
+func createTokenWithPrereqs(
+	ctx context.Context,
+	testNamespace string,
+) *nkpv1alpha1.VGPUToken {
+	name := "has-secret"
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: testNamespace,
+		},
+	}
+	err := TestEnv.CreateObj(ctx, &secret)
+	Expect(err).NotTo(HaveOccurred())
+	token := nkpv1alpha1.VGPUToken{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: testNamespace,
+		},
+		Spec: nkpv1alpha1.VGPUTokenSpec{
+			TokenSecret: corev1.LocalObjectReference{
+				Name: name,
+			},
+		},
+	}
+	err = TestEnv.CreateObj(ctx, &token)
+	Expect(err).NotTo(HaveOccurred())
+	Eventually(func() []metav1.Condition {
+		err = TestEnv.Client.Get(ctx, ctrlclient.ObjectKeyFromObject(&token), &token)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting token.")
+
+		}
+		return token.Status.Conditions
+	}).Should(
+		ContainElement(
+			gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+				"Type":   Equal(nkpv1alpha1.ConditionTokenSecret),
+				"Status": Equal(metav1.ConditionTrue),
+			}),
+		),
+	)
+	return &token
+}
+
 var _ = Describe("VGPUToken Controller", func() {
 	var (
 		ctx                      context.Context
@@ -259,5 +306,51 @@ var _ = Describe("VGPUToken Controller", func() {
 			}
 			return &sa
 		}).ShouldNot(BeNil())
+	})
+	It("should create a new daemonset if one is deleted", func() {
+
+		ctx := context.Background()
+		token := createTokenWithPrereqs(
+			ctx,
+			testNamespace,
+		)
+		ds := appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      generator.FormatDaemonSetName(token.GetName()),
+				Namespace: testNamespace,
+			},
+		}
+		Eventually(func() *appsv1.DaemonSet {
+			err = TestEnv.Client.Get(ctx, ctrlclient.ObjectKeyFromObject(&ds), &ds)
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil
+				}
+				Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting token.")
+
+			}
+			return &ds
+		}).ShouldNot(BeNil(), "expected to create a daemonest")
+		By("deleting the daemonest")
+		err := TestEnv.Cleanup(
+			ctx,
+			&ds,
+		)
+		Expect(err).To(BeNil())
+
+		err = TestEnv.Client.Get(ctx, ctrlclient.ObjectKeyFromObject(&ds), &ds)
+		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "expected not found error")
+
+		Eventually(func() *appsv1.DaemonSet {
+			err = TestEnv.Client.Get(ctx, ctrlclient.ObjectKeyFromObject(&ds), &ds)
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil
+				}
+				Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting token.")
+
+			}
+			return &ds
+		}).ShouldNot(BeNil(), "expected daemonest to be recreated")
 	})
 })
