@@ -36,6 +36,7 @@ const (
 	ReasonGetFailed     string = "GetFailed"
 	ReasonUpdateSuccess string = "UpdateSuccess"
 	ReasonUpdateFailed  string = "UpdateFailed"
+	ReasonUptoDate      string = "ObjectUpToDate"
 )
 
 const (

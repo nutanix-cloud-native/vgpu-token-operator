@@ -149,7 +149,7 @@ func reconcileOwnedResource[T ctrlclient.Object](
 	shouldUpdateFunc func(got T) bool,
 ) (T, error) {
 	logger := logf.FromContext(ctx)
-	logger.Info("Reconciling resource")
+	logger.Info(fmt.Sprintf("Reconciling resource %s", resourceTypeName))
 	namespace := token.Namespace
 	desiredObj := generateFunc(namespace)
 	gotObj := newEmptyObj()
@@ -244,6 +244,14 @@ func reconcileOwnedResource[T ctrlclient.Object](
 			metav1.ConditionTrue,
 			nkpv1alpha1.ReasonUpdateSuccess,
 			fmt.Sprintf("%s %s reconciled successfully", resourceTypeName, desiredObj.GetName()),
+		)
+	} else {
+		logger.Info("Object does not need update")
+		setCondition(
+			&cond,
+			metav1.ConditionTrue,
+			nkpv1alpha1.ReasonUptoDate,
+			fmt.Sprintf("%s %s up to date", resourceTypeName, desiredObj.GetName()),
 		)
 	}
 	return desiredObj, nil
