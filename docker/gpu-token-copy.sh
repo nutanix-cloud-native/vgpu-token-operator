@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 while true; do
   if ! cmp -s /config/client_configuration_token.tok /host-token/client_configuration_token.tok; then
