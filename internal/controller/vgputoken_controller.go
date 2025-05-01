@@ -51,15 +51,6 @@ type VGPUTokenReconciler struct {
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the VGPULicenseValidator object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.4/pkg/reconcile
 func (r *VGPUTokenReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := logf.FromContext(ctx)
 	log.Info("Reconcile VGPUTokenReconciler")
@@ -133,9 +124,55 @@ func (r *VGPUTokenReconciler) reconcileNormal(
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile daemonset %w", err)
 	}
-	if ds.Status.NumberReady != ds.Status.DesiredNumberScheduled {
+	cond = metav1.Condition{
+		Type: nkpv1alpha1.ConditionPropagated,
+	}
+	if ds.Status.ObservedGeneration < ds.Generation {
+		setCondition(
+			&cond,
+			metav1.ConditionFalse,
+			nkpv1alpha1.ReasonDaemonSetUpdating,
+			"DaemonSet is processing updates",
+		)
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+	desired := ds.Status.DesiredNumberScheduled
+	available := ds.Status.NumberAvailable
+	var requeueAfter time.Duration
+	switch {
+	case desired == 0: // set none desired
+		setCondition(
+			&cond,
+			metav1.ConditionTrue,
+			nkpv1alpha1.ReasonNoneDesired,
+			"No replicas desired",
+		)
+	case available == 0: // set none ready
+		setCondition(
+			&cond,
+			metav1.ConditionFalse,
+			nkpv1alpha1.ReasonNoneReady,
+			fmt.Sprintf("desired %d but none available", desired),
+		)
+	case available < desired: // set partial ready
+		setCondition(
+			&cond,
+			metav1.ConditionFalse,
+			nkpv1alpha1.ReasonPartialReady,
+			fmt.Sprintf("desired %d but have %d available", desired, available),
+		)
+		requeueAfter = time.Minute * 2
+	case desired == available: // set all ready
+		setCondition(
+			&cond,
+			metav1.ConditionTrue,
+			nkpv1alpha1.ReasonAllReady,
+			"All replicas ready",
+		)
+	}
+	if requeueAfter > 0 {
 		return ctrl.Result{
-			RequeueAfter: time.Minute * 2,
+			RequeueAfter: requeueAfter,
 		}, nil
 	}
 	return ctrl.Result{}, nil

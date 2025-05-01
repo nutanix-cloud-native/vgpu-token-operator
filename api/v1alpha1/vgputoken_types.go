@@ -44,15 +44,6 @@ type VGPUTokenSpec struct {
 
 type VGPUTokenStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-	Nodes      []NodeTokenStatus  `json:"nodes,omitempty"`
-}
-
-type NodeTokenStatus struct {
-	Ready                    bool               `json:"ready"`
-	Name                     string             `json:"name"`
-	LastSync                 *metav1.Time       `json:"lastSync,omitempty"`
-	Conditions               []metav1.Condition `json:"conditions,omitempty"`
-	ObservedSecretGeneration string             `json:"observedSecretGeneration,omitempty"`
 }
 
 // +kubebuilder:object:root=true
