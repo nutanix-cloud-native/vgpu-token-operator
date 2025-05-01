@@ -58,7 +58,7 @@ spec:
                 type: object
               tokenSecret:
                 description: |-
-                  TokenConfigmap refers to the configmap that contains the token contents
+                  TokenSecret refers to the configmap that contains the token contents
                   this must be in the same namesapce as the token object
                 properties:
                   name:

@@ -34,7 +34,7 @@ go-generate:
 		rbac:headerFile="hack/license-header.yaml.txt",roleName=vgpu-token-operator-manager-role \
 		output:rbac:artifacts:config=charts/vgpu-token-operator/templates/rbac
 	controller-gen paths="./api/v1alpha1"  \
-	  object:headerFile="hack/license-header.go.txt" output:object:artifacts:config=/dev/null \
+	  object:headerFile="hack/license-header.go.txt" output:object:artifacts:config=/api/v1alpha1 \
 	  crd:headerFile=hack/license-header.yaml.txt output:crd:artifacts:config=charts/vgpu-token-operator/templates/crd
 .PHONY: fmt
 fmt: ## Run go fmt against code.
