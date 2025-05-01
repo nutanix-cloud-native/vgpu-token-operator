@@ -1,3 +1,6 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 # This is an example .goreleaser.yml file with some sensible defaults.
 # Make sure to check the documentation at https://goreleaser.com
 
@@ -125,4 +128,3 @@ kos:
     ko_data_creation_time: "{{.CommitTimestamp}}"
     tags:
       - 'v{{ trimprefix .Version "v" }}'
-

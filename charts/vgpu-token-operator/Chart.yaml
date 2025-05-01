@@ -1,3 +1,6 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 apiVersion: v2
 name: vgpu-token-operator
 description: A Helm chart to distribute the project vgpu-token-operator

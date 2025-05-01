@@ -12,7 +12,7 @@ IMAGE_TAG="${VERSION}-${ARCH}"
 CLEANUP_CLUSTER=0
 
 function cleanup() {
-  if [[ "${CLEANUP_CLUSTER}" -eq 1 ]]; then
+  if [[ ${CLEANUP_CLUSTER} -eq 1 ]]; then
     echo "Cleaning up KinD cluster..."
     make kind.delete
   fi
@@ -23,7 +23,7 @@ trap cleanup EXIT
 echo "Checking for changed charts..."
 changed_charts=$(ct list-changed --config "$CT_CONFIG")
 
-if [[ -z "$changed_charts" ]]; then
+if [[ -z $changed_charts ]]; then
   echo "No charts changed - exiting"
   exit 0
 fi
@@ -42,7 +42,7 @@ CLEANUP_CLUSTER=1
 echo "Building Docker images..."
 make release-snapshot
 
-eval $(make kind.kubeconfig)
+eval "$(make kind.kubeconfig)"
 echo "Loading image into KinD cluster..."
 kind load docker-image \
   --name "${KIND_CLUSTER_NAME}" \

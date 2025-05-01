@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/go-logr/logr"
+	"github.com/google/go-cmp/cmp"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -25,8 +27,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/go-logr/logr"
-	"github.com/google/go-cmp/cmp"
 	nkpv1alpha1 "github.com/nutanix-cloud-native/vgpu-token-operator/api/v1alpha1"
 	"github.com/nutanix-cloud-native/vgpu-token-operator/pkg/generator"
 	"github.com/nutanix-cloud-native/vgpu-token-operator/pkg/k8s/client"

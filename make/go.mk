@@ -1,3 +1,6 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 ENVTEST_VERSION=1.29.x!
 
 

@@ -22,9 +22,10 @@ package controller
 import (
 	"testing"
 
-	"github.com/nutanix-cloud-native/vgpu-token-operator/internal/helpers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/nutanix-cloud-native/vgpu-token-operator/internal/helpers"
 )
 
 var TestEnv *helpers.TestEnvironment //nolint:gochecknoglobals //upstream test standard

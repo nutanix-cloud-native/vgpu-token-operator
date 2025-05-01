@@ -45,7 +45,6 @@ jobs:
           reporter: github-pr-review
           golangci_lint_version: v${{ steps.versions.outputs.golangci-lint }}
           go_version: v${{ steps.versions.outputs.golang }}
-          workdir: ${{ matrix.module }}
           golangci_lint_flags: "--config=${{ github.workspace }}/.golangci.yml"
 
   lint-gha:
@@ -115,7 +114,6 @@ jobs:
         with:
           enable-cache: true
 
-      - if: steps.list-changed.outputs.changed == 'true'
-        name: Run chart-testing (lint)
+      - name: Run chart-testing (lint)
         run: |
           devbox run -- make helm-lint

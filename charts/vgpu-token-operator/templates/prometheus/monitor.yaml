@@ -1,3 +1,6 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 # To integrate with Prometheus.
 {{- if .Values.prometheus.enable }}
 apiVersion: monitoring.coreos.com/v1

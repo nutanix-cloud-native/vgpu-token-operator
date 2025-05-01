@@ -6,6 +6,9 @@ package controller
 import (
 	"context"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gstruct"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -15,9 +18,6 @@ import (
 
 	nkpv1alpha1 "github.com/nutanix-cloud-native/vgpu-token-operator/api/v1alpha1"
 	"github.com/nutanix-cloud-native/vgpu-token-operator/pkg/generator"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gstruct"
 )
 
 func createTokenWithPrereqs(
@@ -53,7 +53,6 @@ func createTokenWithPrereqs(
 				return nil
 			}
 			Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting token.")
-
 		}
 		return token.Status.Conditions
 	}).Should(
@@ -69,10 +68,11 @@ func createTokenWithPrereqs(
 
 var _ = Describe("VGPUToken Controller", func() {
 	var (
-		ctx                      context.Context
-		testNamespace            string
-		ns                       *corev1.Namespace
-		err                      error
+		ctx           context.Context
+		testNamespace string
+		ns            *corev1.Namespace
+		err           error
+		//nolint:gosec // not using credentials
 		vGPUTokenPropagatorImage = "ghcr.io/nutanix-cloud-native/vgpu-token-copier:v0.0.0-dev.0"
 	)
 	BeforeEach(func() {
@@ -308,7 +308,6 @@ var _ = Describe("VGPUToken Controller", func() {
 		}).ShouldNot(BeNil())
 	})
 	It("should create a new daemonset if one is deleted", func() {
-
 		ctx := context.Background()
 		token := createTokenWithPrereqs(
 			ctx,

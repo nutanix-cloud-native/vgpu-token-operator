@@ -1,3 +1,6 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 RELEASE_NAME := $(GITHUB_REPOSITORY)
 NAMESPACE := vgpu-system
 CHART_DIR := charts/$(RELEASE_NAME)

@@ -1,3 +1,6 @@
+// Copyright 2025 Nutanix. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package helpers
 
 import (
@@ -15,7 +18,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -29,7 +31,7 @@ import (
 	nkpv1alpha1 "github.com/nutanix-cloud-native/vgpu-token-operator/api/v1alpha1"
 )
 
-// nolint: gochecknoinits // needed for test initialization
+//nolint:gochecknoinits //needed for test initialization
 func init() {
 	logger := zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true))
 	// use klog as the internal logger for this envtest environment.
@@ -38,6 +40,19 @@ func init() {
 	ctrl.SetLogger(logger)
 	// add logger for ginkgo
 	klog.SetOutput(GinkgoWriter)
+
+	utilruntime.Must(scheme.AddToScheme(testScheme))
+	utilruntime.Must(nkpv1alpha1.AddToScheme(testScheme))
+
+	// Create the test environment.
+	env = &envtest.Environment{
+		CRDInstallOptions: envtest.CRDInstallOptions{
+			ErrorIfPathMissing: true,
+			Paths: []string{
+				filepath.Join("..", "..", "charts", "vgpu-token-operator", "templates", "crd"),
+			},
+		},
+	}
 }
 
 var (
@@ -52,23 +67,6 @@ var cacheSyncBackoff = wait.Backoff{
 	Jitter:   0.4,
 }
 
-// nolint: gochecknoinits // needed for test initialization
-func init() {
-	// Calculate the scheme.
-	utilruntime.Must(clientgoscheme.AddToScheme(testScheme))
-	utilruntime.Must(nkpv1alpha1.AddToScheme(testScheme))
-
-	// Create the test environment.
-	env = &envtest.Environment{
-		CRDInstallOptions: envtest.CRDInstallOptions{
-			ErrorIfPathMissing: true,
-			Paths: []string{
-				filepath.Join("..", "..", "charts", "vgpu-token-operator", "templates", "crd"),
-			},
-		},
-	}
-}
-
 // TestEnvironment encapsulates a Kubernetes local test environment.
 type TestEnvironment struct {
 	manager.Manager
@@ -76,6 +74,7 @@ type TestEnvironment struct {
 	Config    *rest.Config
 	WithWatch client.WithWatch
 
+	//nolint:containedctx // test context used to make things easier
 	doneMgr      context.Context
 	directClient client.Client
 	cancel       context.CancelFunc
@@ -111,7 +110,10 @@ func NewTestEnvironment() *TestEnvironment {
 		klog.Fatalf("unable to create mgr: %+v", err)
 	}
 
-	withWatch, err := client.NewWithWatch(mgr.GetConfig(), client.Options{Scheme: scheme.Scheme, Mapper: mgr.GetRESTMapper()})
+	withWatch, err := client.NewWithWatch(mgr.GetConfig(), client.Options{
+		Scheme: scheme.Scheme,
+		Mapper: mgr.GetRESTMapper(),
+	})
 	if err != nil {
 		klog.Fatalf("Failed to start testenv manager: %v", err)
 	}
@@ -176,8 +178,8 @@ func (t *TestEnvironment) CreateObj(ctx context.Context, obj client.Object, opts
 // CreateAndWait creates the given object and waits for the cache to be updated accordingly.
 //
 // NOTE: Waiting for the cache to be updated helps in preventing test flakes due to the cache sync delays.
-func (e *TestEnvironment) CreateAndWait(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
-	if err := e.Client.Create(ctx, obj, opts...); err != nil {
+func (t *TestEnvironment) CreateAndWait(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	if err := t.Client.Create(ctx, obj, opts...); err != nil {
 		return err
 	}
 
@@ -187,7 +189,7 @@ func (e *TestEnvironment) CreateAndWait(ctx context.Context, obj client.Object, 
 	if err := wait.ExponentialBackoff(
 		cacheSyncBackoff,
 		func() (done bool, err error) {
-			if err := e.Get(ctx, key, objCopy); err != nil {
+			if err := t.Get(ctx, key, objCopy); err != nil {
 				if apierrors.IsNotFound(err) {
 					return false, nil
 				}
@@ -195,7 +197,11 @@ func (e *TestEnvironment) CreateAndWait(ctx context.Context, obj client.Object, 
 			}
 			return true, nil
 		}); err != nil {
-		return errors.Wrapf(err, "object %s, %s is not being added to the testenv client cache", obj.GetObjectKind().GroupVersionKind().String(), key)
+		return errors.Wrapf(
+			err,
+			"object %s, %s is not being added to the testenv client cache",
+			obj.GetObjectKind().GroupVersionKind().String(), key,
+		)
 	}
 	return nil
 }
