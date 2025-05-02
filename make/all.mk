@@ -9,3 +9,4 @@ include $(INCLUDE_DIR)kind.mk
 include $(INCLUDE_DIR)goreleaser.mk
 include $(INCLUDE_DIR)helm.mk
 include $(INCLUDE_DIR)go.mk
+include $(INCLUDE_DIR)precommit.mk
