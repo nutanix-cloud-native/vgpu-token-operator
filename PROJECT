@@ -19,13 +19,4 @@ resources:
   kind: VGPUToken
   path: github.com/nutanix-cloud-native/vgpu-token-operator/api/v1alpha1
   version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: nkp.nutanix.com
-  group: nkp
-  kind: VGPULicenseValidator
-  path: github.com/nutanix-cloud-native/vgpu-token-operator/api/v1alpha1
-  version: v1alpha1
 version: "3"
