@@ -21,7 +21,7 @@ defaults:
 jobs:
   release-please:
     runs-on:
-      - self-hosted-nutanix-medium
+      - self-hosted-ncn-medium
     steps:
       - uses: googleapis/release-please-action@v4
         id: release-please
