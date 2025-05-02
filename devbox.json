@@ -18,6 +18,7 @@
     "ko@latest",
     "envsubst@latest",
     "kind@latest",
-    "gotestsum@latest"
+    "gotestsum@latest",
+    "gh@latest"
   ]
 }
