@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
 
+# This script assumes that it will be run in a Daemonset created and configured by pkg/generators
+# /config is the mount of the VGPUToken secret
+# /host-token is the mount of the hostDirectory created with DirectoryOrCreate
 while true; do
   if ! cmp -s /config/client_configuration_token.tok /host-token/client_configuration_token.tok; then
     echo "Detected token change, propagating..."
