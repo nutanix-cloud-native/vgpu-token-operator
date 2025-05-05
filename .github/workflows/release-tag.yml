@@ -21,7 +21,7 @@ defaults:
 jobs:
   release-tag:
     runs-on:
-      - self-hosted-ncn-medium
+      - self-hosted-ncn-docker-medium
     steps:
       - uses: actions/checkout@v4
         with:
