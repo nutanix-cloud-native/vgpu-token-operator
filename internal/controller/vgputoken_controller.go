@@ -417,9 +417,9 @@ func (r *VGPUTokenReconciler) reconcileDaemonSet(
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *VGPUTokenReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *VGPUTokenReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(
-		context.Background(),
+		ctx,
 		&nkpv1alpha1.VGPUToken{},
 		tokenSecretRefIndex,
 		tokenSecretIndexer); err != nil {

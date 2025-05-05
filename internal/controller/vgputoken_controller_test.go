@@ -84,7 +84,7 @@ var _ = Describe("VGPUToken Controller", func() {
 			Client:                   TestEnv.GetClient(),
 			Scheme:                   TestEnv.GetScheme(),
 			VGPUTokenPropagatorImage: vGPUTokenPropagatorImage,
-		}).SetupWithManager(TestEnv.Manager)
+		}).SetupWithManager(ctx, TestEnv.Manager)
 	})
 	AfterEach(func() {
 		ctx = context.Background()
