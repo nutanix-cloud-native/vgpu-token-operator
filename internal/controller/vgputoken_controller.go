@@ -394,19 +394,9 @@ func (r *VGPUTokenReconciler) reconcileDaemonSet(
 		// 3. User changes nodesSelectors
 		// 4. Image passed in to controller changes.
 		func(logger logr.Logger, wantDS, gotDS *appsv1.DaemonSet) bool {
-			if !cmp.Equal(wantDS.Spec.Template.Spec.Containers, gotDS.Spec.Template.Spec.Containers) {
-				diff := cmp.Diff(wantDS.Spec.Template.Spec.Containers, gotDS.Spec.Template.Spec.Containers)
-				logger.Info(fmt.Sprintf("got diff for containers %v \n", diff))
-				return true
-			}
-			if !cmp.Equal(gotDS.Spec.Template.Spec.Volumes, wantDS.Spec.Template.Spec.Volumes) {
-				diff := cmp.Diff(wantDS.Spec.Template.Spec.Volumes, gotDS.Spec.Template.Spec.Volumes)
-				logger.Info(fmt.Sprintf("got diff for volumes %v \n", diff))
-				return true
-			}
-			if !cmp.Equal(gotDS.Spec.Template.Spec.NodeSelector, wantDS.Spec.Template.Spec.NodeSelector) {
-				diff := cmp.Diff(wantDS.Spec.Template.Spec.NodeSelector, gotDS.Spec.Template.Spec.NodeSelector)
-				logger.Info(fmt.Sprintf("got diff for nodeSelectors %v \n", diff))
+			if cmp.Equal(wantDS.Spec, gotDS.Spec) {
+				diff := cmp.Diff(wantDS.Spec, gotDS.Spec)
+				logger.Info(fmt.Sprintf("got diff for daemonset spec %v \n", diff))
 				return true
 			}
 			return false
