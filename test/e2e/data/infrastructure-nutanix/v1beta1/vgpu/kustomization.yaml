@@ -1,0 +1,11 @@
+# default template enables external ccm and csi
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../base
+- ../addons/cni/resources/cni-resource-set.yaml
+- ../addons/ccm
+- ./gpumd.yaml
+- ./gpu-nutanix-machine-template.yaml
+patches:
+- path: ../addons/cni/patches/cluster-cni.yaml

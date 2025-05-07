@@ -1,0 +1,91 @@
+---
+providers:
+  - name: cluster-api
+    type: CoreProvider
+    versions:
+    - name: "${CAPI_VERSION}"
+      value: "https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/core-components.yaml"
+      type: url
+      contract: v1beta1
+      files:
+      - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+      replacements:
+      - old: --metrics-addr=127.0.0.1:8080
+        new: --metrics-addr=:8080
+
+  - name: kubeadm
+    type: BootstrapProvider
+    versions:
+    - name: "${CAPI_VERSION}"
+      value: "https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/bootstrap-components.yaml"
+      type: url
+      contract: v1beta1
+      files:
+      - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+      replacements:
+      - old: --metrics-addr=127.0.0.1:8080
+        new: --metrics-addr=:8080
+
+  - name: kubeadm
+    type: ControlPlaneProvider
+    versions:
+    - name: "${CAPI_VERSION}"
+      value: "https://github.com/kubernetes-sigs/cluster-api/releases/download/${CAPI_VERSION}/control-plane-components.yaml"
+      type: url
+      contract: v1beta1
+      files:
+      - sourcePath: "../data/shared/v1beta1/metadata.yaml"
+      replacements:
+      - old: --metrics-addr=127.0.0.1:8080
+        new: --metrics-addr=:8080
+
+  - name: nutanix
+    type: InfrastructureProvider
+    versions:
+    - name: "${CAPX_VERSION}"
+      value: "https://github.com/nutanix-cloud-native/cluster-api-provider-nutanix/releases/download/${CAPX_VERSION}/infrastructure-components.yaml"
+      type: "url"
+      contract: v1beta1
+      files:
+      - sourcePath: "../data/shared/v1beta1-capx/metadata.yaml"
+      - sourcePath: "../data/infrastructure-nutanix/v1beta1/cluster-template-vgpu.yaml"
+        targetName: cluster-template-vgpu.yaml
+
+variables:
+  KUBERNETES_VERSION_MANAGEMENT: "v1.31.4"
+  IP_FAMILY: "IPv4"
+  CLUSTERCTL_LOG_LEVEL: 10
+  NUTANIX_PROVIDER: "true"
+  NUTANIX_ENDPOINT: ""
+  NUTANIX_USER: ""
+  NUTANIX_PASSWORD: ""
+  NUTANIX_PORT: "9440"
+  IMAGE_LOOKUP_BASE_OS: "ubuntu-22.04"
+  VGPU_IMAGE_LOOKUP_FORMAT: "\"nkp-{{.BaseOS}}-vgpu-{{.K8sVersion}}.*\""
+  IMAGE_LOOKUP_FORMAT: "\"nkp-{{.BaseOS}}-{{.K8sVersion}}.*\""
+  NUTANIX_INSECURE: true
+  NUTANIX_ADDITIONAL_TRUST_BUNDLE: ""
+  KUBERNETES_VERSION: "v1.31.4"
+  NUTANIX_SSH_AUTHORIZED_KEY: ""
+  CONTROL_PLANE_MACHINE_COUNT: 1
+  GPU_MACHINE_COUNT: 1
+  NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_CONTROL_PLANE: ""
+  NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_GPU: ""
+  NUTANIX_SUBNET_NAME: ""
+  CNI: "${CNI}"
+  NUTANIX_SSH_AUTHORIZED_KEY: "${SSH_PUBLIC_KEY_FOR_TESTS}"
+
+intervals:
+  default/wait-controllers: ["3m", "10s"]
+  default/wait-cluster: ["5m", "10s"]
+  default/wait-control-plane: ["10m", "10s"]
+  default/wait-worker-nodes: ["5m", "10s"]
+  default/wait-machine-pool-nodes: ["5m", "10s"]
+  default/wait-delete-cluster: ["30m", "10s"]
+  default/wait-machine-upgrade: ["20m", "10s"]
+  default/wait-machine-pool-upgrade: ["5m", "10s"]
+  default/wait-nodes-ready: ["10m", "10s"]
+  default/wait-machine-remediation: ["5m", "10s"]
+  node-drain/wait-deployment-available: ["3m", "10s"]
+  node-drain/wait-control-plane: ["15m", "10s"]
+  node-drain/wait-machine-deleted: ["2m", "10s"]

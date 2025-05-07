@@ -31,3 +31,10 @@ go.work
 
 dist/
 .local/
+
+test/e2e/data/infrastructure-nutanix/v1beta1/*.yaml
+_artifacts/
+junit-e2e.xml
+report-e2e.json
+.envrc.local
+test/e2e/config/nutanix.yaml
