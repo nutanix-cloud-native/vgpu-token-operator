@@ -102,6 +102,16 @@ func (r *VGPUTokenReconciler) reconcileNormal(
 		Reason:  nkpv1alpha1.ReasonTokenSecretRetrieved,
 	}
 	meta.SetStatusCondition(&vgpuToken.Status.Conditions, cond)
+	if err := controllerutil.SetOwnerReference(vgpuToken, &secretForDaemonSet, r.Scheme); err != nil {
+		errMsg := fmt.Sprintf("failed to set owner reference on secret %s", secretForDaemonSet.Name)
+		log.Error(err, errMsg)
+		setCondition(
+			&cond,
+			metav1.ConditionFalse,
+			nkpv1alpha1.ReasonCreateFailed,
+			fmt.Sprintf("%s: %s", errMsg, err.Error()),
+		)
+	}
 
 	err = r.reconcileServiceAccount(ctx, vgpuToken)
 	if err != nil {
