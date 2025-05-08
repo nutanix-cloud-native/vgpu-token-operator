@@ -315,7 +315,12 @@ func (r *VGPUTokenReconciler) reconcileServiceAccount(
 		vgpuToken,
 		nkpv1alpha1.ConditionServiceAccountForDaemonset,
 		generator.GenerateServiceAccount,
-		&corev1.ServiceAccount{},
+		&corev1.ServiceAccount{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: corev1.SchemeGroupVersion.String(),
+				Kind:       "ServiceAccount",
+			},
+		},
 	)
 	return err
 }
@@ -330,7 +335,12 @@ func (r *VGPUTokenReconciler) reconcileRole(
 		vgpuToken,
 		nkpv1alpha1.ConditionRoleForDaemonset,
 		generator.GenerateRole,
-		&rbacv1.Role{},
+		&rbacv1.Role{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Kind:       "Role",
+			},
+		},
 	)
 	return err
 }
@@ -345,7 +355,12 @@ func (r *VGPUTokenReconciler) reconcileRoleBinding(
 		vgpuToken,
 		nkpv1alpha1.ConditionServiceRoleBindingForDaemonset,
 		generator.GenerateRoleBinding,
-		&rbacv1.RoleBinding{},
+		&rbacv1.RoleBinding{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Kind:       "RoleBinding",
+			},
+		},
 	)
 	return err
 }
@@ -368,7 +383,12 @@ func (r *VGPUTokenReconciler) reconcileDaemonSet(
 			)
 			return &ds
 		},
-		&appsv1.DaemonSet{},
+		&appsv1.DaemonSet{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: appsv1.SchemeGroupVersion.String(),
+				Kind:       "DaemonSet",
+			},
+		},
 	)
 }
 
