@@ -26,5 +26,5 @@ helm-dependencies:  ## Update Helm dependencies
 	helm dependency update $(CHART_DIR)
 
 .PHONY: helm-lint
-helm-lint:
+helm-lint: build-snapshot
 	./hack/lint-helm.sh

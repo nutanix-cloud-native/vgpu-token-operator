@@ -119,6 +119,7 @@ jobs:
     env:
       KIND_CLUSTER_NAME: chart-testing
       KIND_KUBECONFIG: ct-kind-kubeconfig
+      GH_TOKEN: ${{ github.token }}
     permissions:
       contents: read
     steps:
