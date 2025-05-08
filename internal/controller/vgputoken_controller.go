@@ -255,7 +255,7 @@ func reconcileOwnedResource[T ctrlclient.Object](
 			return gotObj, fmt.Errorf("%s: %w", errMsg, getErr)
 		}
 	}
-	logger.Info("Applying desired state to resource.")
+	logger.Info(fmt.Sprintf("Applying desired state to resource %s", resourceTypeName))
 	if diff := cmp.Diff(desiredObj, gotObj); diff != "" {
 		logger.V(5).Info(fmt.Sprintf("Got diff %s between two objects", diff))
 	}
@@ -286,7 +286,7 @@ func reconcileOwnedResource[T ctrlclient.Object](
 		)
 		return desiredObj, fmt.Errorf("%s: %w", errMsg, applyErr)
 	}
-	logger.Info("Resource applied successfully.")
+	logger.Info(fmt.Sprintf("Resource applied successfully. %s", resourceTypeName))
 	setCondition(
 		&cond,
 		metav1.ConditionTrue,
