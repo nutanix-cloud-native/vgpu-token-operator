@@ -6,7 +6,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -19,7 +18,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -104,6 +102,16 @@ func (r *VGPUTokenReconciler) reconcileNormal(
 		Reason:  nkpv1alpha1.ReasonTokenSecretRetrieved,
 	}
 	meta.SetStatusCondition(&vgpuToken.Status.Conditions, cond)
+	if err := controllerutil.SetOwnerReference(vgpuToken, &secretForDaemonSet, r.Scheme); err != nil {
+		errMsg := fmt.Sprintf("failed to set owner reference on secret %s", secretForDaemonSet.Name)
+		log.Error(err, errMsg)
+		setCondition(
+			&cond,
+			metav1.ConditionFalse,
+			nkpv1alpha1.ReasonCreateFailed,
+			fmt.Sprintf("%s: %s", errMsg, err.Error()),
+		)
+	}
 
 	err = r.reconcileServiceAccount(ctx, vgpuToken)
 	if err != nil {
@@ -182,16 +190,16 @@ func reconcileOwnedResource[T ctrlclient.Object](
 	ctx context.Context,
 	reconciler *VGPUTokenReconciler,
 	token *nkpv1alpha1.VGPUToken,
-	resourceTypeName,
 	conditionType string,
 	generateFunc func(string) T,
+	newEmptyObj T,
 	shouldUpdateFunc func(logger logr.Logger, want, got T) bool,
 ) (T, error) {
 	logger := logf.FromContext(ctx)
+	resourceTypeName := newEmptyObj.GetObjectKind().GroupVersionKind().Kind
 	logger.Info(fmt.Sprintf("Reconciling resource %s", resourceTypeName))
 	namespace := token.Namespace
 	desiredObj := generateFunc(namespace)
-	var newEmptyObj T
 	gotObj := newEmptyObj
 	gotObj.SetName(desiredObj.GetName())
 	gotObj.SetNamespace(namespace)
@@ -312,12 +320,9 @@ func (r *VGPUTokenReconciler) reconcileServiceAccount(
 		ctx,
 		r,
 		vgpuToken,
-		"serviceaccount",
 		nkpv1alpha1.ConditionServiceAccountForDaemonset,
 		generator.GenerateServiceAccount,
-		func() *corev1.ServiceAccount {
-			return &corev1.ServiceAccount{}
-		},
+		&corev1.ServiceAccount{},
 		func(logger logr.Logger, desired, got *corev1.ServiceAccount) bool {
 			logger.Info("Always forcing an overwrite")
 			return true
@@ -334,12 +339,9 @@ func (r *VGPUTokenReconciler) reconcileRole(
 		ctx,
 		r,
 		vgpuToken,
-		"role",
 		nkpv1alpha1.ConditionRoleForDaemonset,
 		generator.GenerateRole,
-		func() *rbacv1.Role {
-			return &rbacv1.Role{}
-		},
+		&rbacv1.Role{},
 		func(logger logr.Logger, desired, got *rbacv1.Role) bool {
 			logger.Info("Always forcing an overwrite")
 			return true
@@ -356,12 +358,9 @@ func (r *VGPUTokenReconciler) reconcileRoleBinding(
 		ctx,
 		r,
 		vgpuToken,
-		"role",
 		nkpv1alpha1.ConditionServiceRoleBindingForDaemonset,
 		generator.GenerateRoleBinding,
-		func() *rbacv1.RoleBinding {
-			return &rbacv1.RoleBinding{}
-		},
+		&rbacv1.RoleBinding{},
 		func(logger logr.Logger, desired, got *rbacv1.RoleBinding) bool {
 			logger.Info("Always forcing an overwrite")
 			return true
@@ -379,7 +378,6 @@ func (r *VGPUTokenReconciler) reconcileDaemonSet(
 		ctx,
 		r,
 		vgpuToken,
-		"DaemonSet",
 		nkpv1alpha1.ConditionTokenDaemonSet,
 		func(_ string) *appsv1.DaemonSet {
 			ds := generator.GenerateDaemonSetForVGPUToken(
@@ -389,27 +387,17 @@ func (r *VGPUTokenReconciler) reconcileDaemonSet(
 			)
 			return &ds
 		},
-		func() *appsv1.DaemonSet {
-			return &appsv1.DaemonSet{}
-		},
+		&appsv1.DaemonSet{},
+		// The daemonset should be updated under the following conditions:
+		// 1. User changes the TokenSecret reference in vgpuToken object
+		// 2. User changes HostPath in vgpuToken Object
+		// 3. User changes nodesSelectors
+		// 4. Image passed in to controller changes.
 		func(logger logr.Logger, wantDS, gotDS *appsv1.DaemonSet) bool {
-			if !reflect.DeepEqual(wantDS.Spec.Template.Spec.Containers, gotDS.Spec.Template.Spec.Containers) {
-				diff := cmp.Diff(wantDS.Spec.Template.Spec.Containers, gotDS.Spec.Template.Spec.Containers)
-				logger.Info(fmt.Sprintf("got diff %v \n", diff))
+			if cmp.Equal(wantDS.Spec, gotDS.Spec) {
+				diff := cmp.Diff(wantDS.Spec, gotDS.Spec)
+				logger.Info(fmt.Sprintf("got diff for daemonset spec %v \n", diff))
 				return true
-			}
-			vols := gotDS.Spec.Template.Spec.Volumes
-			for i := range vols {
-				if vols[i].VolumeSource.Secret != nil &&
-					vols[i].Name == generator.SecretVolumeName &&
-					vols[i].VolumeSource.Secret.SecretName != secretForDaemonSet.GetName() {
-					return true
-				}
-				if vols[i].HostPath != nil &&
-					vols[i].Name == generator.HostTokenVolumeName &&
-					vols[i].HostPath.Path != ptr.Deref(vgpuToken.Spec.HostDirectoryPath, "") {
-					return true
-				}
 			}
 			return false
 		},
@@ -417,9 +405,9 @@ func (r *VGPUTokenReconciler) reconcileDaemonSet(
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *VGPUTokenReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *VGPUTokenReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(
-		context.Background(),
+		ctx,
 		&nkpv1alpha1.VGPUToken{},
 		tokenSecretRefIndex,
 		tokenSecretIndexer); err != nil {
