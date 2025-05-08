@@ -21,6 +21,9 @@ defaults:
 jobs:
   lint-go:
     name: Lint go code
+    permissions:
+      pull-requests: write
+      contents: read
     runs-on:
       - self-hosted-ncn-docker-medium
     steps:
