@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -193,7 +192,6 @@ func reconcileOwnedResource[T ctrlclient.Object](
 	conditionType string,
 	generateFunc func(string) T,
 	newEmptyObj T,
-	shouldUpdateFunc func(logger logr.Logger, want, got T) bool,
 ) (T, error) {
 	logger := logf.FromContext(ctx)
 	resourceTypeName := newEmptyObj.GetObjectKind().GroupVersionKind().Kind
@@ -257,51 +255,44 @@ func reconcileOwnedResource[T ctrlclient.Object](
 			return gotObj, fmt.Errorf("%s: %w", errMsg, getErr)
 		}
 	}
-	if shouldUpdateFunc(logger, desiredObj, gotObj) {
-		logger.Info("Applying desired state to resource.")
-		if err := controllerutil.SetOwnerReference(token, desiredObj, reconciler.Scheme); err != nil {
-			errMsg := fmt.Sprintf("failed to set owner reference for apply on %s", resourceTypeName)
-			logger.Error(err, errMsg)
-			setCondition(
-				&cond,
-				metav1.ConditionFalse,
-				nkpv1alpha1.ReasonUpdateFailed,
-				fmt.Sprintf("%s: %s", errMsg, err.Error()),
-			)
-			return desiredObj, fmt.Errorf("%s: %w", errMsg, err)
-		}
-		if applyErr := client.ServerSideApply(
-			ctx,
-			reconciler.Client,
-			desiredObj,
-			client.ForceOwnership,
-		); applyErr != nil {
-			errMsg := fmt.Sprintf("failed to apply %s", resourceTypeName)
-			logger.Error(applyErr, errMsg)
-			setCondition(
-				&cond,
-				metav1.ConditionFalse,
-				nkpv1alpha1.ReasonUpdateFailed,
-				fmt.Sprintf("%s: %s", errMsg, applyErr.Error()),
-			)
-			return desiredObj, fmt.Errorf("%s: %w", errMsg, applyErr)
-		}
-		logger.Info("Resource applied successfully.")
-		setCondition(
-			&cond,
-			metav1.ConditionTrue,
-			nkpv1alpha1.ReasonUpdateSuccess,
-			fmt.Sprintf("%s %s reconciled successfully", resourceTypeName, desiredObj.GetName()),
-		)
-	} else {
-		logger.Info("Object does not need update")
-		setCondition(
-			&cond,
-			metav1.ConditionTrue,
-			nkpv1alpha1.ReasonUptoDate,
-			fmt.Sprintf("%s %s up to date", resourceTypeName, desiredObj.GetName()),
-		)
+	logger.Info(fmt.Sprintf("Applying desired state to resource %s", resourceTypeName))
+	if diff := cmp.Diff(desiredObj, gotObj); diff != "" {
+		logger.V(5).Info(fmt.Sprintf("Got diff %s between two objects", diff))
 	}
+	if err := controllerutil.SetOwnerReference(token, desiredObj, reconciler.Scheme); err != nil {
+		errMsg := fmt.Sprintf("failed to set owner reference for apply on %s", resourceTypeName)
+		logger.Error(err, errMsg)
+		setCondition(
+			&cond,
+			metav1.ConditionFalse,
+			nkpv1alpha1.ReasonUpdateFailed,
+			fmt.Sprintf("%s: %s", errMsg, err.Error()),
+		)
+		return desiredObj, fmt.Errorf("%s: %w", errMsg, err)
+	}
+	if applyErr := client.ServerSideApply(
+		ctx,
+		reconciler.Client,
+		desiredObj,
+		client.ForceOwnership,
+	); applyErr != nil {
+		errMsg := fmt.Sprintf("failed to apply %s", resourceTypeName)
+		logger.Error(applyErr, errMsg)
+		setCondition(
+			&cond,
+			metav1.ConditionFalse,
+			nkpv1alpha1.ReasonUpdateFailed,
+			fmt.Sprintf("%s: %s", errMsg, applyErr.Error()),
+		)
+		return desiredObj, fmt.Errorf("%s: %w", errMsg, applyErr)
+	}
+	logger.Info(fmt.Sprintf("Resource applied successfully. %s", resourceTypeName))
+	setCondition(
+		&cond,
+		metav1.ConditionTrue,
+		nkpv1alpha1.ReasonUpdateSuccess,
+		fmt.Sprintf("%s %s reconciled successfully", resourceTypeName, desiredObj.GetName()),
+	)
 	return desiredObj, nil
 }
 
@@ -323,10 +314,6 @@ func (r *VGPUTokenReconciler) reconcileServiceAccount(
 		nkpv1alpha1.ConditionServiceAccountForDaemonset,
 		generator.GenerateServiceAccount,
 		&corev1.ServiceAccount{},
-		func(logger logr.Logger, desired, got *corev1.ServiceAccount) bool {
-			logger.Info("Always forcing an overwrite")
-			return true
-		},
 	)
 	return err
 }
@@ -342,10 +329,6 @@ func (r *VGPUTokenReconciler) reconcileRole(
 		nkpv1alpha1.ConditionRoleForDaemonset,
 		generator.GenerateRole,
 		&rbacv1.Role{},
-		func(logger logr.Logger, desired, got *rbacv1.Role) bool {
-			logger.Info("Always forcing an overwrite")
-			return true
-		},
 	)
 	return err
 }
@@ -361,10 +344,6 @@ func (r *VGPUTokenReconciler) reconcileRoleBinding(
 		nkpv1alpha1.ConditionServiceRoleBindingForDaemonset,
 		generator.GenerateRoleBinding,
 		&rbacv1.RoleBinding{},
-		func(logger logr.Logger, desired, got *rbacv1.RoleBinding) bool {
-			logger.Info("Always forcing an overwrite")
-			return true
-		},
 	)
 	return err
 }
@@ -388,19 +367,6 @@ func (r *VGPUTokenReconciler) reconcileDaemonSet(
 			return &ds
 		},
 		&appsv1.DaemonSet{},
-		// The daemonset should be updated under the following conditions:
-		// 1. User changes the TokenSecret reference in vgpuToken object
-		// 2. User changes HostPath in vgpuToken Object
-		// 3. User changes nodesSelectors
-		// 4. Image passed in to controller changes.
-		func(logger logr.Logger, wantDS, gotDS *appsv1.DaemonSet) bool {
-			if cmp.Equal(wantDS.Spec, gotDS.Spec) {
-				diff := cmp.Diff(wantDS.Spec, gotDS.Spec)
-				logger.Info(fmt.Sprintf("got diff for daemonset spec %v \n", diff))
-				return true
-			}
-			return false
-		},
 	)
 }
 
