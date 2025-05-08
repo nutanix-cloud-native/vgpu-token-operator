@@ -1,0 +1,48 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: release-please-main
+
+on:
+  push:
+    branches:
+      - main
+      - release/v*
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release-please:
+    runs-on:
+      - self-hosted-ncn-docker-medium
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release-please
+        with:
+          target-branch: ${{ github.ref_name }}
+
+      - uses: actions/checkout@v4
+        if: ${{ steps.release-please.outputs.release_created }}
+
+      - name: Tag common and api modules
+        if: ${{ steps.release-please.outputs.release_created }}
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git tag -a common/${{ steps.release-please.outputs.tag_name }} -m "Release common/${{ steps.release-please.outputs.tag_name }}"
+          git tag -a api/${{ steps.release-please.outputs.tag_name }} -m "Release api/${{ steps.release-please.outputs.tag_name }}"
+          git push origin {api,common}/${{ steps.release-please.outputs.tag_name }}
+
+      - if: ${{ steps.release-please.outputs.release_created }}
+        name: Run release workflow
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: release-tag.yml
+          ref: ${{ steps.release-please.outputs.tag_name }}

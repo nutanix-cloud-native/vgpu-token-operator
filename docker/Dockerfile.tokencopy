@@ -1,0 +1,7 @@
+# Docker container built by goreleaser at release time.
+# Used by DaemonSet in pkg/generator
+FROM alpine:3.21
+VOLUME config
+VOLUME host-token
+COPY ./docker/gpu-token-copy.sh /opt/gpu-token-copy.sh
+ENTRYPOINT ["/opt/gpu-token-copy.sh"]
