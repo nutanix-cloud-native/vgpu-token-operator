@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -258,9 +257,6 @@ func reconcileOwnedResource[T ctrlclient.Object](
 		}
 	}
 	logger.Info(fmt.Sprintf("Applying desired state to resource %s", resourceTypeName))
-	if diff := cmp.Diff(desiredObj, gotObj); diff != "" {
-		logger.V(5).Info(fmt.Sprintf("Got diff %s between two objects", diff))
-	}
 	if err := controllerutil.SetOwnerReference(token, desiredObj, reconciler.Scheme); err != nil {
 		errMsg := fmt.Sprintf("failed to set owner reference for apply on %s", resourceTypeName)
 		logger.Error(err, errMsg)
@@ -315,7 +311,12 @@ func (r *VGPUTokenReconciler) reconcileServiceAccount(
 		vgpuToken,
 		nkpv1alpha1.ConditionServiceAccountForDaemonset,
 		generator.GenerateServiceAccount,
-		&corev1.ServiceAccount{},
+		&corev1.ServiceAccount{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: corev1.SchemeGroupVersion.String(),
+				Kind:       "ServiceAccount",
+			},
+		},
 	)
 	return err
 }
@@ -330,7 +331,12 @@ func (r *VGPUTokenReconciler) reconcileRole(
 		vgpuToken,
 		nkpv1alpha1.ConditionRoleForDaemonset,
 		generator.GenerateRole,
-		&rbacv1.Role{},
+		&rbacv1.Role{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Kind:       "Role",
+			},
+		},
 	)
 	return err
 }
@@ -345,7 +351,12 @@ func (r *VGPUTokenReconciler) reconcileRoleBinding(
 		vgpuToken,
 		nkpv1alpha1.ConditionServiceRoleBindingForDaemonset,
 		generator.GenerateRoleBinding,
-		&rbacv1.RoleBinding{},
+		&rbacv1.RoleBinding{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Kind:       "RoleBinding",
+			},
+		},
 	)
 	return err
 }
@@ -368,7 +379,12 @@ func (r *VGPUTokenReconciler) reconcileDaemonSet(
 			)
 			return &ds
 		},
-		&appsv1.DaemonSet{},
+		&appsv1.DaemonSet{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: appsv1.SchemeGroupVersion.String(),
+				Kind:       "DaemonSet",
+			},
+		},
 	)
 }
 
