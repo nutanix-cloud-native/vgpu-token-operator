@@ -39,9 +39,9 @@ type VGPUTokenReconciler struct {
 	VGPUTokenPropagatorImage string
 }
 
-// +kubebuilder:rbac:groups=nkp.nutanix.com,resources=vgputokens,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=nkp.nutanix.com,resources=vgputokens/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=nkp.nutanix.com,resources=vgputokens/finalizers,verbs=update
+// +kubebuilder:rbac:groups=vgpu-token.nutanix.com,resources=vgputokens,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=vgpu-token.nutanix.com,resources=vgputokens/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=vgpu-token.nutanix.com,resources=vgputokens/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
@@ -194,10 +194,12 @@ func reconcileOwnedResource[T ctrlclient.Object](
 	newEmptyObj T,
 ) (T, error) {
 	logger := logf.FromContext(ctx)
-	resourceTypeName := newEmptyObj.GetObjectKind().GroupVersionKind().Kind
-	logger.Info(fmt.Sprintf("Reconciling resource %s", resourceTypeName))
 	namespace := token.Namespace
 	desiredObj := generateFunc(namespace)
+
+	resourceTypeName := desiredObj.GetObjectKind().GroupVersionKind().Kind
+	logger.Info(fmt.Sprintf("Reconciling resource %s", resourceTypeName))
+
 	gotObj := newEmptyObj
 	gotObj.SetName(desiredObj.GetName())
 	gotObj.SetNamespace(namespace)
