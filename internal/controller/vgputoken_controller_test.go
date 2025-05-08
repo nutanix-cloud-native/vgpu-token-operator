@@ -39,7 +39,7 @@ func createTokenWithPrereqs(
 			Namespace: testNamespace,
 		},
 		Spec: nkpv1alpha1.VGPUTokenSpec{
-			TokenSecret: corev1.LocalObjectReference{
+			TokenSecretRef: corev1.LocalObjectReference{
 				Name: name,
 			},
 		},
@@ -99,7 +99,7 @@ var _ = Describe("VGPUToken Controller", func() {
 				Namespace: testNamespace,
 			},
 			Spec: nkpv1alpha1.VGPUTokenSpec{
-				TokenSecret: corev1.LocalObjectReference{
+				TokenSecretRef: corev1.LocalObjectReference{
 					Name: "not-here",
 				},
 			},
@@ -141,7 +141,7 @@ var _ = Describe("VGPUToken Controller", func() {
 				Namespace: testNamespace,
 			},
 			Spec: nkpv1alpha1.VGPUTokenSpec{
-				TokenSecret: corev1.LocalObjectReference{
+				TokenSecretRef: corev1.LocalObjectReference{
 					Name: name,
 				},
 			},
@@ -241,7 +241,7 @@ var _ = Describe("VGPUToken Controller", func() {
 									IgnoreMissing: true,
 									IgnoreExtras:  true,
 									Fields: gstruct.Fields{
-										"SecretName": Equal(token.Spec.TokenSecret.Name),
+										"SecretName": Equal(token.Spec.TokenSecretRef.Name),
 									},
 								},
 							},

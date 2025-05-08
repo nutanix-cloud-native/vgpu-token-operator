@@ -76,7 +76,7 @@ func (r *VGPUTokenReconciler) reconcileNormal(
 	err := r.Client.Get(
 		ctx,
 		ctrlclient.ObjectKey{
-			Name:      vgpuToken.Spec.TokenSecret.Name,
+			Name:      vgpuToken.Spec.TokenSecretRef.Name,
 			Namespace: vgpuToken.GetNamespace(),
 		},
 		&secretForDaemonSet,
@@ -433,7 +433,7 @@ func tokenSecretIndexer(obj ctrlclient.Object) []string {
 		return nil
 	}
 	refNamespace := vgpuToken.GetNamespace()
-	return []string{fmt.Sprintf("%s/%s", refNamespace, vgpuToken.Spec.TokenSecret.Name)}
+	return []string{fmt.Sprintf("%s/%s", refNamespace, vgpuToken.Spec.TokenSecretRef.Name)}
 }
 
 func (r *VGPUTokenReconciler) tokenSecretMapper(ctx context.Context, o ctrlclient.Object) []reconcile.Request {

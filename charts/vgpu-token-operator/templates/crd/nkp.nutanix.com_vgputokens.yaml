@@ -56,9 +56,9 @@ spec:
                 description: NodeSelector refers to label selectors for finding the
                   correct nodes to propagate the token to
                 type: object
-              tokenSecret:
+              tokenSecretRef:
                 description: |-
-                  TokenSecret refers to the configmap that contains the token contents
+                  TokenSecretRef refers to the configmap that contains the token contents
                   this must be in the same namesapce as the token object
                 properties:
                   name:
@@ -73,7 +73,7 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
             required:
-            - tokenSecret
+            - tokenSecretRef
             type: object
           status:
             properties:

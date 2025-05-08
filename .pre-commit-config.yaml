@@ -1,4 +1,4 @@
-# Copyright 2023 Nutanix. All rights reserved.
+# Copyright 2025 Nutanix. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 repos:
@@ -62,7 +62,7 @@ repos:
   hooks:
   - id: gitlint
   - id: gitlint-ci
-    args: ["--commits", "origin/main..HEAD"]
+    args: ["--commits", "origin/main..HEAD", "--ignore=B6"]
 - repo: https://github.com/jumanjihouse/pre-commit-hooks
   rev: 3.0.0
   hooks:
