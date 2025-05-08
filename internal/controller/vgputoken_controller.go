@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -258,9 +257,6 @@ func reconcileOwnedResource[T ctrlclient.Object](
 		}
 	}
 	logger.Info(fmt.Sprintf("Applying desired state to resource %s", resourceTypeName))
-	if diff := cmp.Diff(desiredObj, gotObj); diff != "" {
-		logger.V(5).Info(fmt.Sprintf("Got diff %s between two objects", diff))
-	}
 	if err := controllerutil.SetOwnerReference(token, desiredObj, reconciler.Scheme); err != nil {
 		errMsg := fmt.Sprintf("failed to set owner reference for apply on %s", resourceTypeName)
 		logger.Error(err, errMsg)
