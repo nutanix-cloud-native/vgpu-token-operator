@@ -22,7 +22,7 @@ jobs:
   lint-go:
     name: Lint go code
     runs-on:
-      - self-hosted-nutanix-medium
+      - self-hosted-ncn-docker-medium
     steps:
       - name: Clone the code
         uses: actions/checkout@v4
@@ -49,7 +49,7 @@ jobs:
 
   lint-gha:
     runs-on:
-      - self-hosted-nutanix-medium
+      - self-hosted-ncn-docker-medium
     permissions:
       pull-requests: write
     steps:
@@ -64,7 +64,7 @@ jobs:
 
   pre-commit:
     runs-on:
-      - self-hosted-nutanix-medium
+      - self-hosted-ncn-docker-medium
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -99,7 +99,7 @@ jobs:
 
   lint-test-helm:
     runs-on:
-      - self-hosted-nutanix-medium
+      - self-hosted-ncn-docker-medium
     env:
       KIND_CLUSTER_NAME: chart-testing
       KIND_KUBECONFIG: ct-kind-kubeconfig

@@ -21,7 +21,7 @@ defaults:
 jobs:
   release-tag:
     runs-on:
-      - self-hosted-nutanix-medium
+      - self-hosted-ncn-docker-medium
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,11 +59,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          devbox run -- helm package ./charts/cluster-api-runtime-extensions-nutanix \
+          devbox run -- helm package ./charts/vgpu-token-operator \
                           --destination . \
                           --version ${{ github.ref_name }} \
                           --app-version ${{ github.ref_name }}
-          devbox run -- gh release upload ${{ github.ref_name }} cluster-api-runtime-extensions-nutanix-*.tgz
+          devbox run -- gh release upload ${{ github.ref_name }} vgpu-token-operator-*.tgz
 
       - name: Build GitHub pages
         uses: benc-uk/workflow-dispatch@v1

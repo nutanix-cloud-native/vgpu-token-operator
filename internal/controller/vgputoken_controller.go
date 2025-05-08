@@ -185,14 +185,14 @@ func reconcileOwnedResource[T ctrlclient.Object](
 	resourceTypeName,
 	conditionType string,
 	generateFunc func(string) T,
-	newEmptyObj func() T,
 	shouldUpdateFunc func(logger logr.Logger, want, got T) bool,
 ) (T, error) {
 	logger := logf.FromContext(ctx)
 	logger.Info(fmt.Sprintf("Reconciling resource %s", resourceTypeName))
 	namespace := token.Namespace
 	desiredObj := generateFunc(namespace)
-	gotObj := newEmptyObj()
+	var newEmptyObj T
+	gotObj := newEmptyObj
 	gotObj.SetName(desiredObj.GetName())
 	gotObj.SetNamespace(namespace)
 	cond := metav1.Condition{Type: conditionType}
