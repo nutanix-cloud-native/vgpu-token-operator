@@ -6,9 +6,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.17.3
-  name: vgputokens.nkp.nutanix.com
+  name: vgputokens.vgpu-token.nutanix.com
 spec:
-  group: nkp.nutanix.com
+  group: vgpu-token.nutanix.com
   names:
     kind: VGPUToken
     listKind: VGPUTokenList
