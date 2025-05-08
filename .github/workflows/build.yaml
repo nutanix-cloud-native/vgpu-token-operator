@@ -58,6 +58,7 @@ jobs:
       - self-hosted-ncn-docker-medium
     permissions:
       pull-requests: write
+      contents: read
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -71,16 +72,25 @@ jobs:
   pre-commit:
     runs-on:
       - self-hosted-ncn-docker-medium
+    permissions:
+      pull-requests: write
+      contents: read
     steps:
       - name: Check out code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      # See: https://github.com/DeterminateSystems/nix-installer-action/issues/68
+      - name: Install Nix on self-hosted ARC runners
+        uses: cachix/install-nix-action@V27
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.12.0
         with:
-          enable-cache: true
+          skip-nix-installation: true
 
       - name: Go cache
         uses: actions/cache@v4
@@ -109,16 +119,24 @@ jobs:
     env:
       KIND_CLUSTER_NAME: chart-testing
       KIND_KUBECONFIG: ct-kind-kubeconfig
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # See: https://github.com/DeterminateSystems/nix-installer-action/issues/68
+      - name: Install Nix on self-hosted ARC runners
+        uses: cachix/install-nix-action@V27
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.12.0
         with:
-          enable-cache: true
+          skip-nix-installation: true
 
       - name: Run chart-testing (lint)
         run: |
