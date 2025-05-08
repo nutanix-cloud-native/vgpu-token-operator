@@ -1,0 +1,130 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+
+version: 2
+
+changelog:
+  use: github
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+  filters:
+    exclude:
+      - '^docs:'
+      - '^chore:'
+      - '^build:'
+builds:
+  - id: vgpu-token-operator
+    dir: ./cmd
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    flags:
+      - -trimpath
+    ldflags:
+      - -X 'k8s.io/component-base/version.buildDate={{ .CommitDate }}'
+      - -X 'k8s.io/component-base/version.gitCommit={{ .FullCommit }}'
+      - -X 'k8s.io/component-base/version.gitTreeState={{ .Env.GIT_TREE_STATE }}'
+      - -X 'k8s.io/component-base/version.gitVersion=v{{ trimprefix .Version "v" }}'
+      - -X 'k8s.io/component-base/version.major={{ .Major }}'
+      - -X 'k8s.io/component-base/version.minor={{ .Minor }}'
+      - -X 'k8s.io/component-base/version/verflag.programName={{ .ProjectName }}'
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    hooks:
+      post:
+        - |
+          sh -ec '
+          SOURCE_DATE_EPOCH=$(date +%s)
+          KO_DATA_DATE_EPOCH=$(date +%s)
+          export KO_DOCKER_REPO="ko.local/{{ .ProjectName }}"
+          if [ {{ .IsSnapshot }} == true ] && [ {{ .Runtime.Goarch }} == {{ .Arch }} ]; then
+                if [ "${GORELEASER_PUSH_SNAPSHOT_IMAGES}" == true ]; then
+                  KO_DOCKER_REPO=harbor.eng.nutanix.com/nkp/{{ .ProjectName }}
+                fi
+                ko build \
+                  --bare \
+                  --platform linux/{{ .Arch }} \
+                  -t v{{ trimprefix .Version "v" }}-{{ .Arch }} \
+                  ./cmd
+                if [ "${GORELEASER_PUSH_SNAPSHOT_IMAGES}" == true ]; then
+                  docker pull ${KO_DOCKER_REPO}:v{{ trimprefix .Version "v" }}-amd64
+                  docker tag ${KO_DOCKER_REPO}:v{{ trimprefix .Version "v" }}-amd64 ${KO_DOCKER_REPO}:v{{ trimprefix .Version "v" }}
+                  docker push ${KO_DOCKER_REPO}:v{{ trimprefix .Version "v" }}
+                fi
+          fi'
+dockers:
+  - image_templates:
+      - '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}harbor.eng.nutanix.com/nkp{{ else }}docker.io/mesosphere{{ end }}/vgpu-token-copier:v{{ trimprefix .Version "v" }}-amd64'
+    use: buildx
+    dockerfile: ./docker/Dockerfile.tokencopy
+    extra_files:
+      - docker/gpu-token-copy.sh
+    goarch: amd64
+    skip_push: '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}false{{else}}true{{end}}'
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--pull"
+      - '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}--push=true{{else}}--push=false{{end}}'
+      - '--build-arg=VERSION=v{{ trimprefix .Version "v" }}'
+      - "--label=org.opencontainers.image.created={{.CommitDate}}"
+      - "--label=org.opencontainers.image.title=vgpu-token-copier"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+  - image_templates:
+      - '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}harbor.eng.nutanix.com/nkp{{ else }}docker.io/mesosphere{{ end }}/vgpu-token-copier:v{{ trimprefix .Version "v" }}-arm64'
+    use: buildx
+    dockerfile: ./docker/Dockerfile.tokencopy
+    extra_files:
+      - docker/gpu-token-copy.sh
+    goarch: arm64
+    skip_push: '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}false{{else}}true{{end}}'
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--pull"
+      - '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}--push=true{{else}}--push=false{{end}}'
+      - '--build-arg=VERSION=v{{ trimprefix .Version "v" }}'
+      - "--label=org.opencontainers.image.created={{.CommitDate}}"
+      - "--label=org.opencontainers.image.title=vgpu-token-copier"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+
+docker_manifests:
+  - name_template: '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}harbor.eng.nutanix.com/nkp/vgpu-token-copier:v{{ trimprefix .Version "v" }}{{ else }}docker.io/mesosphere/vgpu-token-copier:v{{ trimprefix .Version "v" }}{{ end }}'
+    skip_push: '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}false{{else}}true{{end}}'
+    image_templates:
+      - '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}harbor.eng.nutanix.com/nkp/vgpu-token-copier:v{{ trimprefix .Version "v" }}-arm64{{ else }}docker.io/mesosphere/vgpu-token-copier-arm64{{ end }}'
+      - '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}harbor.eng.nutanix.com/nkp/vgpu-token-copier:v{{ trimprefix .Version "v" }}-amd64{{ else }}docker.io/mesosphere/vgpu-token-copier:v{{ trimprefix .Version "v" }}-amd64{{ end }}'
+
+kos:
+  - id: vgpu-token-operator
+    build: vgpu-token-operator
+    labels:
+      org.opencontainers.image.created: "{{ .CommitDate }}"
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.version: 'v{{ trimprefix .Version "v" }}'
+      org.opencontainers.image.source: "{{ .GitURL }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    repositories:
+      - 'docker.io/mesosphere/{{ .ProjectName }}'
+    bare: true
+    disable: "{{ .IsSnapshot }}"
+    creation_time: "{{.CommitTimestamp}}"
+    ko_data_creation_time: "{{.CommitTimestamp}}"
+    tags:
+      - 'v{{ trimprefix .Version "v" }}'

@@ -1,0 +1,24 @@
+{
+  "packages": [
+    "actionlint@latest",
+    "kubebuilder@latest",
+    "kubernetes-controller-tools@latest",
+    "pre-commit@latest",
+    "git@latest",
+    "go@latest",
+    "kustomize@latest",
+    "kubectl@latest",
+    "golangci-lint@1.64.5",
+    "setup-envtest@latest",
+    "shfmt@latest",
+    "shellcheck@latest",
+    "goreleaser@latest",
+    "chart-testing@latest",
+    "gojq@latest",
+    "ko@latest",
+    "envsubst@latest",
+    "kind@latest",
+    "gotestsum@latest",
+    "gh@latest"
+  ]
+}
