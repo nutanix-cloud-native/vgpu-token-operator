@@ -19,6 +19,7 @@
     "envsubst@latest",
     "kind@latest",
     "gotestsum@latest",
-    "gh@latest"
+    "gh@latest",
+    "path:nix-packages#release-please-cli"
   ]
 }
