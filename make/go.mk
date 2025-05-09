@@ -38,6 +38,7 @@ test: go-generate
 
 export CAPI_VERSION = $(shell go list -m -f '{{ .Version }}' sigs.k8s.io/cluster-api)
 export CAPX_VERSION ?= v1.6.1
+export CAAPH_VERSION ?= v0.3.1
 E2E_DRYRUN ?= false
 E2E_VERBOSE ?= $(filter $(E2E_DRYRUN),true) # If dry-run, enable verbosity
 E2E_PARALLEL_NODES ?= $(if $(filter $(E2E_DRYRUN),true),1,$(shell nproc --ignore=1)) # Ginkgo cannot dry-run in parallel

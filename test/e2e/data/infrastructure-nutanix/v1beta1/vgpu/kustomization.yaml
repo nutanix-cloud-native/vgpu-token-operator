@@ -7,5 +7,8 @@ resources:
 - ../addons/ccm
 - ./gpumd.yaml
 - ./gpu-nutanix-machine-template.yaml
+- ./helm-addon.yaml
 patches:
 - path: ../addons/cni/patches/cluster-cni.yaml
+- path: ./helm-addon-patch.yaml
+
