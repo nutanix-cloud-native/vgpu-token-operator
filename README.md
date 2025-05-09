@@ -33,7 +33,7 @@ To deploy the operator during development you will need the following:
 make helm-install-snapshot
 ```
 
-_NOTE: set `OCI_REPOSITORY`to a repository that you have push access to
+_NOTE_: set `OCI_REPOSITORY`to a repository that you have push access to
 
 1. Create manifests
 
