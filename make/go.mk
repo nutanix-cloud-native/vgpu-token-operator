@@ -80,7 +80,6 @@ test.e2e: cluster-e2e-templates-v1beta1 build-snapshot release-snapshot-images
 	    $(E2E_GINKGO_FLAGS) \
 	    --junit-report=junit-e2e.xml \
 	    --json-report=report-e2e.json \
-			--output-interceptor-mode=none \
 	    --tags e2e \
 	    test/e2e/... -- \
 	      -e2e.artifacts-folder="$(ARTIFACTS)" \
