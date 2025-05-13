@@ -62,6 +62,15 @@ var (
 
 	// bootstrapKubernetesVersion is the version of the image used in bootstrap cluster.
 	bootstrapKubernetesVersion string
+
+	// helmChartDir is path to the vgpu helmChart
+	helmChartDir string
+
+	// vgpuImageOCIRepository is the image repository that the images the helm chart will use
+	vgpuImageOCIRepository string
+
+	// helmChartVersion is the version of the helm chart
+	helmChartVersion string
 )
 
 // Test suite global vars.
@@ -114,6 +123,24 @@ func init() {
 		"e2e.bootstrap-kind-version",
 		"v1.31.0",
 		"the version of the image used in bootstrap cluster",
+	)
+	flag.StringVar(
+		&helmChartDir,
+		"e2e.helm-chart-dir",
+		"",
+		"path to helm chart",
+	)
+	flag.StringVar(
+		&vgpuImageOCIRepository,
+		"e2e.helm-oci-repository",
+		"",
+		"oci repository that holds helm images",
+	)
+	flag.StringVar(
+		&helmChartVersion,
+		"e2e.helm-chart-version",
+		"",
+		"version for vgpu operator helm chart",
 	)
 }
 
@@ -250,6 +277,7 @@ func initBootstrapCluster(bootstrapClusterProxy framework.ClusterProxy, config *
 		ClusterProxy:            bootstrapClusterProxy,
 		ClusterctlConfigPath:    clusterctlConfig,
 		InfrastructureProviders: config.InfrastructureProviders(),
+		AddonProviders:          config.AddonProviders(),
 		LogFolder:               filepath.Join(artifactFolder, "clusters", bootstrapClusterProxy.GetName()),
 	}, config.GetIntervals(bootstrapClusterProxy.GetName(), "wait-controllers")...)
 }

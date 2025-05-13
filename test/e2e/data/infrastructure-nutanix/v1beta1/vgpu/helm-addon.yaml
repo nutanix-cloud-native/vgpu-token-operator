@@ -12,7 +12,7 @@ spec:
   namespace: gpu-operator
   valuesTemplate: |
     nfd:
-      enabled: false
+      enabled: true
     driver:
       enabled: false
     devicePlugin:

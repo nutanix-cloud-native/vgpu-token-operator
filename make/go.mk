@@ -56,7 +56,7 @@ cluster-e2e-templates-v1beta1: ## Generate cluster templates for v1beta1
 	kustomize build $(E2E_TEMPLATES)/v1beta1/vgpu --load-restrictor LoadRestrictionsNone > $(E2E_TEMPLATES)/v1beta1/cluster-template-vgpu.yaml
 
 .PHONY: test.e2e
-test.e2e: cluster-e2e-templates-v1beta1
+test.e2e: cluster-e2e-templates-v1beta1 build-snapshot release-snapshot-images
 		env CNI=$(CNI_PATH_CALICO) \
 	  envsubst -no-unset -no-empty -i '$(E2E_CONF_FILE_TEMPLATE)' -o '$(E2E_CONF_FILE)'
 	  ginkgo run \
@@ -80,11 +80,15 @@ test.e2e: cluster-e2e-templates-v1beta1
 	    $(E2E_GINKGO_FLAGS) \
 	    --junit-report=junit-e2e.xml \
 	    --json-report=report-e2e.json \
+			--output-interceptor-mode=none \
 	    --tags e2e \
 	    test/e2e/... -- \
 	      -e2e.artifacts-folder="$(ARTIFACTS)" \
 	      -e2e.config="$(E2E_CONF_FILE)" \
-	      $(if $(filter $(E2E_SKIP_CLEANUP),true),-e2e.skip-resource-cleanup)
+	      $(if $(filter $(E2E_SKIP_CLEANUP),true),-e2e.skip-resource-cleanup) \
+	      -e2e.helm-chart-dir=$(REPO_ROOT)/$(CHART_DIR)  \
+	      -e2e.helm-oci-repository=$(OCI_REPOSITORY) \
+	      -e2e.helm-chart-version=v$(shell gojq -r .version dist/metadata.json)
 	go tool cover \
 	  -html=coverage-e2e.out \
 	  -o coverage-e2e.html

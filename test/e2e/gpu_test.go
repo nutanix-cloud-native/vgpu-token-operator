@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/nutanix-cloud-native/vgpu-token-operator/test/e2e/framework/helm"
 	"github.com/nutanix-cloud-native/vgpu-token-operator/test/e2e/framework/nutanix"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -146,6 +147,19 @@ var _ = Describe("Nutanix Virtual GPU", Label("vgpu-token-operator"), func() {
 				WaitForControlPlaneIntervals: e2eConfig.GetIntervals("", "wait-control-plane"),
 				WaitForMachineDeployments:    e2eConfig.GetIntervals("", "wait-worker-nodes"),
 			}, clusterResources)
+
+			By("Fetching the workload cluster")
+			cluster := clusterResources.Cluster
+			// Get a ClusterBroker so we can interact with the workload cluster
+			selfHostedClusterProxy := bootstrapClusterProxy.GetWorkloadCluster(
+				ctx,
+				cluster.Namespace,
+				cluster.Name,
+			)
+
+			By("Deploying vgpu helm chart")
+			err := helm.DeployVGPUChart(selfHostedClusterProxy.GetKubeconfigPath(), helmChartDir, vgpuImageOCIRepository, helmChartVersion)
+			Expect(err).ToNot(HaveOccurred(), "expected to install helm chart")
 		})
 	})
 })
