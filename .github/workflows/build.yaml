@@ -168,6 +168,13 @@ jobs:
         with:
           skip-nix-installation: true
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: harbor.eng.nutanix.com
+          username: ${{ secrets.HARBOR_USER }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+
       - name: Run e2e tests
         run: |
           devbox run -- make test.e2e
