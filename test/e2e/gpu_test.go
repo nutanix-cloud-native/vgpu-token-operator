@@ -26,7 +26,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	nkpv1alpha1 "github.com/nutanix-cloud-native/vgpu-token-operator/api/v1alpha1"
 	"github.com/nutanix-cloud-native/vgpu-token-operator/pkg/generator"
 	"github.com/nutanix-cloud-native/vgpu-token-operator/test/e2e/framework/helm"
@@ -180,7 +182,7 @@ var _ = Describe("Nutanix Virtual GPU", Label("vgpu-token-operator"), func() {
 					Namespace: helm.Namespace,
 				},
 				StringData: map[string]string{
-					"client_configuration_token": tokenValue,
+					"client_configuration_token.tok": tokenValue,
 				},
 			}
 			workloadClient := selfHostedClusterProxy.GetClient()
@@ -235,11 +237,12 @@ var _ = Describe("Nutanix Virtual GPU", Label("vgpu-token-operator"), func() {
 					if apierrors.IsNotFound(err) {
 						return false
 					}
-					Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting token.")
+					Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting daemonset.")
 
 				}
+				spew.Dump(ds.Status)
 				return ds.Status.DesiredNumberScheduled > 0 && ds.Status.DesiredNumberScheduled == ds.Status.NumberAvailable
-			}).ShouldNot(BeTrue(), "expected daemonset to have replicas")
+			}).WithTimeout(5*time.Minute).WithPolling(time.Second*5).Should(BeTrue(), "expected daemonset to have replicas")
 		})
 	})
 })
