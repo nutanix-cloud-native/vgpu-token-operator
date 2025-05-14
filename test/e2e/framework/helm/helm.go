@@ -20,18 +20,18 @@ import (
 )
 
 const (
-	namespace   = "vgpu-system"
+	Namespace   = "vgpu-system"
 	releaseName = "vgpu-token-operator"
 )
 
 func DeployVGPUChart(kubeconfig, chartDir, ociRepository, version string) error {
 	settings := &genericclioptions.ConfigFlags{
-		Namespace:  ptr.To(namespace),
+		Namespace:  ptr.To(Namespace),
 		KubeConfig: ptr.To(kubeconfig),
 	}
 
 	actionConfig := &action.Configuration{}
-	if err := actionConfig.Init(settings, namespace, "memory", log.Printf); err != nil {
+	if err := actionConfig.Init(settings, Namespace, "memory", log.Printf); err != nil {
 		return fmt.Errorf("failed to initialize Helm action config: %w", err)
 	}
 
@@ -59,7 +59,7 @@ func DeployVGPUChart(kubeconfig, chartDir, ociRepository, version string) error 
 	}
 
 	installClient := action.NewInstall(actionConfig)
-	installClient.Namespace = namespace
+	installClient.Namespace = Namespace
 	installClient.CreateNamespace = true
 	installClient.Wait = true
 	installClient.ReleaseName = releaseName

@@ -24,18 +24,26 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 
+	nkpv1alpha1 "github.com/nutanix-cloud-native/vgpu-token-operator/api/v1alpha1"
+	"github.com/nutanix-cloud-native/vgpu-token-operator/pkg/generator"
 	"github.com/nutanix-cloud-native/vgpu-token-operator/test/e2e/framework/helm"
 	"github.com/nutanix-cloud-native/vgpu-token-operator/test/e2e/framework/nutanix"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gstruct"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	. "sigs.k8s.io/cluster-api/test/e2e"
 	"sigs.k8s.io/cluster-api/test/framework"
 	"sigs.k8s.io/cluster-api/test/framework/clusterctl"
 	"sigs.k8s.io/cluster-api/util"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func generateRandomName(name string) string {
@@ -153,7 +161,6 @@ var _ = Describe("Nutanix Virtual GPU", Label("vgpu-token-operator"), func() {
 
 			By("Fetching the workload cluster")
 			cluster := clusterResources.Cluster
-			// Get a ClusterBroker so we can interact with the workload cluster
 			selfHostedClusterProxy := bootstrapClusterProxy.GetWorkloadCluster(
 				ctx,
 				cluster.Namespace,
@@ -163,6 +170,76 @@ var _ = Describe("Nutanix Virtual GPU", Label("vgpu-token-operator"), func() {
 			By("Deploying vgpu helm chart")
 			err := helm.DeployVGPUChart(selfHostedClusterProxy.GetKubeconfigPath(), helmChartDir, vgpuImageOCIRepository, helmChartVersion)
 			Expect(err).ToNot(HaveOccurred(), "expected to install helm chart")
+
+			By("Creating VGPU token secret")
+			tokenValue := os.Getenv("VGPU_TOKEN_SECRET")
+			Expect(tokenValue).ToNot(BeEmpty(), "VGPU_TOKEN_SECRET env var not set")
+			secret := corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "client-config-token",
+					Namespace: helm.Namespace,
+				},
+				StringData: map[string]string{
+					"client_configuration_token": tokenValue,
+				},
+			}
+			workloadClient := selfHostedClusterProxy.GetClient()
+			err = workloadClient.Create(ctx, &secret)
+			Expect(err).ToNot(HaveOccurred(), "expected to create secret on workload")
+
+			By("Creating VGPUToken object")
+			tokenName := "test-token"
+			token := nkpv1alpha1.VGPUToken{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      tokenName,
+					Namespace: helm.Namespace,
+				},
+				Spec: nkpv1alpha1.VGPUTokenSpec{
+					TokenSecretRef: corev1.LocalObjectReference{
+						Name: secret.Name,
+					},
+				},
+			}
+			err = workloadClient.Create(ctx, &token)
+			Expect(err).ToNot(HaveOccurred(), "exepected to create token object on remote")
+
+			By("Checking token status")
+			Eventually(func() []metav1.Condition {
+				err = workloadClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&token), &token)
+				if err != nil {
+					if apierrors.IsNotFound(err) {
+						return nil
+					}
+					Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting token.")
+				}
+				return token.Status.Conditions
+			}).Should(
+				ContainElement(
+					gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+						"Type":   Equal(nkpv1alpha1.ConditionPropagated),
+						"Status": Equal(metav1.ConditionTrue),
+					}),
+				),
+			)
+
+			By("Checking observing daemonset status")
+			ds := appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      generator.FormatDaemonSetName(token.GetName()),
+					Namespace: helm.Namespace,
+				},
+			}
+			Eventually(func() bool {
+				err = workloadClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&ds), &ds)
+				if err != nil {
+					if apierrors.IsNotFound(err) {
+						return false
+					}
+					Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting token.")
+
+				}
+				return ds.Status.DesiredNumberScheduled > 0 && ds.Status.DesiredNumberScheduled == ds.Status.NumberAvailable
+			}).ShouldNot(BeTrue(), "expected daemonset to have replicas")
 		})
 	})
 })
