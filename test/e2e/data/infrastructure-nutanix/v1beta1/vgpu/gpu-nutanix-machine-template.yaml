@@ -25,7 +25,7 @@ spec:
         name: "${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_GPU}"
       subnet:
         - type: name
-          name: "${NUTANIX_SUBNET_NAME}"
+          name: "${NUTANIX_GPU_SUBNET_NAME}"
       gpus:
         - type: name
           name: "${NUTANIX_GPU_NAME}"
