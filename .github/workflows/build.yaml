@@ -149,15 +149,6 @@ jobs:
   e2e-tests:
     runs-on:
       - self-hosted-ncn-dind
-    env:
-      NUTANIX_GPU_NAME: "NVIDIA A40-4C"
-      SSH_PUBLIC_KEY_FOR_TESTS: ${{ vars.SSH_PUBLIC_KEY_FOR_TESTS }}
-      NUTANIX_USER: ${{ secrets.NUTANIX_USER }}
-      NUTANIX_PASSWORD: ${{ secrets.NUTANIX_PASSWORD }}
-      NUTANIX_ENDPOINT: ${{ secrets.NUTANIX_ENDPOINT }}
-      NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_CONTROL_PLANE: ${{ secrets.NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_CONTROL_PLANE }}
-      NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_GPU: ${{ secrets.NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_GPU }}
-      NUTANIX_SUBNET_NAME: ${{ secrets.NUTANIX_SUBNET_NAME }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -185,3 +176,13 @@ jobs:
       - name: Run e2e tests
         run: |
           devbox run -- make test.e2e
+        env:
+          NUTANIX_GPU_NAME: "NVIDIA A40-4C"
+          SSH_PUBLIC_KEY_FOR_TESTS: ${{ vars.SSH_PUBLIC_KEY_FOR_TESTS }}
+          NUTANIX_USER: ${{ secrets.NUTANIX_USER }}
+          NUTANIX_PASSWORD: ${{ secrets.NUTANIX_PASSWORD }}
+          NUTANIX_ENDPOINT: ${{ secrets.NUTANIX_ENDPOINT }}
+          NUTANIX_PORT: "9440"
+          NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_CONTROL_PLANE: ${{ secrets.NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_CONTROL_PLANE }}
+          NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_GPU: ${{ secrets.NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_GPU }}
+          NUTANIX_SUBNET_NAME: ${{ secrets.NUTANIX_SUBNET_NAME }}
