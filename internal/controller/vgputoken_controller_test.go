@@ -215,8 +215,7 @@ var _ = Describe("VGPUToken Controller", func() {
 						IgnoreMissing: false,
 					}),
 					"NodeSelector": gstruct.MatchKeys(0, gstruct.Keys{
-						"nvidia.com/vgpu.present":      Equal("true"),
-						"nvidia.com/gpu.deploy.driver": Equal("pre-installed"),
+						"nvidia.com/vgpu.present": Equal("true"),
 					}),
 					"Volumes": And(
 						HaveLen(2),
