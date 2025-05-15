@@ -20,3 +20,9 @@ spec:
       - echo "before kubeadm call" > /var/log/prekubeadm.log
       - hostnamectl set-hostname "{{ ds.meta_data.hostname }}"
       verbosity: 10
+      users:
+      - lockPassword: false
+        name: capiuser
+        sshAuthorizedKeys:
+        - ${NUTANIX_SSH_AUTHORIZED_KEY}
+        sudo: ALL=(ALL) NOPASSWD:ALL
