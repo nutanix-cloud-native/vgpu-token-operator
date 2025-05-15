@@ -65,7 +65,7 @@ providers:
         new: --metrics-addr=:8080
 
 variables:
-  KUBERNETES_VERSION_MANAGEMENT: "v1.31.4"
+  KUBERNETES_VERSION_MANAGEMENT: "v1.32.3"
   IP_FAMILY: "IPv4"
   CLUSTERCTL_LOG_LEVEL: 10
   NUTANIX_PROVIDER: "true"
@@ -74,8 +74,8 @@ variables:
   NUTANIX_PASSWORD: ""
   NUTANIX_PORT: "9440"
   IMAGE_LOOKUP_BASE_OS: "ubuntu-22.04"
-  VGPU_IMAGE_LOOKUP_FORMAT: "\"nkp-{{.BaseOS}}-vgpu-{{.K8sVersion}}.*\""
-  IMAGE_LOOKUP_FORMAT: "\"nkp-{{.BaseOS}}-{{.K8sVersion}}.*\""
+  VGPU_IMAGE_LOOKUP_FORMAT: "\"nkp-release-{{.BaseOS}}-vgpu-{{.K8sVersion}}.*\""
+  IMAGE_LOOKUP_FORMAT: "\"nkp-release-{{.BaseOS}}-{{.K8sVersion}}.*\""
   NUTANIX_INSECURE: true
   NUTANIX_ADDITIONAL_TRUST_BUNDLE: ""
   KUBERNETES_VERSION: "v1.31.4"
