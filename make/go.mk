@@ -71,8 +71,8 @@ test.e2e: cluster-e2e-templates-v1beta1 build-snapshot release-snapshot-images
 	    --covermode=atomic \
 	    --coverprofile coverage-e2e.out \
 	    $(if $(filter $(E2E_DRYRUN), true),--dry-run) \
-	    --procs=$(E2E_PARALLEL_NODES) \
-	    --compilers=$(E2E_PARALLEL_NODES) \
+	    --procs=1 \
+	    --compilers=1 \
 	    --flake-attempts=$(E2E_FLAKE_ATTEMPTS) \
 	    $(if $(E2E_FOCUS),--focus="$(E2E_FOCUS)") \
 	    $(if $(E2E_SKIP),--skip="$(E2E_SKIP)") \
