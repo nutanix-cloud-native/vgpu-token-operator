@@ -74,11 +74,11 @@ variables:
   NUTANIX_PASSWORD: ""
   NUTANIX_PORT: "9440"
   IMAGE_LOOKUP_BASE_OS: "ubuntu-22.04"
-  VGPU_IMAGE_LOOKUP_FORMAT: "\"nkp-release-{{.BaseOS}}-vgpu-{{.K8sVersion}}.*\""
-  IMAGE_LOOKUP_FORMAT: "\"nkp-release-{{.BaseOS}}-{{.K8sVersion}}.*\""
+  VGPU_IMAGE_LOOKUP_FORMAT: "\"nkp-{{.BaseOS}}-release-vgpu-{{.K8sVersion}}.*\""
+  IMAGE_LOOKUP_FORMAT: "\"nkp-{{.BaseOS}}-release-{{.K8sVersion}}.*\""
   NUTANIX_INSECURE: true
   NUTANIX_ADDITIONAL_TRUST_BUNDLE: ""
-  KUBERNETES_VERSION: "v1.31.4"
+  KUBERNETES_VERSION: "v1.32.3"
   NUTANIX_SSH_AUTHORIZED_KEY: ""
   CONTROL_PLANE_MACHINE_COUNT: 1
   GPU_MACHINE_COUNT: 1
