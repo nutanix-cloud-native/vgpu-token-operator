@@ -69,7 +69,7 @@ test.e2e: cluster-e2e-templates-v1beta1 build-snapshot release-snapshot-images
 	    --keep-going \
 	    $(if $(filter $(E2E_VERBOSE),true),--vv) \
 	    --covermode=atomic \
-	    --coverprofile coverage-e2e.out \
+	    --coverprofile $(REPO_ROOT)/coverage-e2e.out \
 	    $(if $(filter $(E2E_DRYRUN), true),--dry-run) \
 	    --procs=1 \
 	    --compilers=1 \
@@ -85,9 +85,9 @@ test.e2e: cluster-e2e-templates-v1beta1 build-snapshot release-snapshot-images
 	      -e2e.artifacts-folder="$(ARTIFACTS)" \
 	      -e2e.config="$(E2E_CONF_FILE)" \
 	      $(if $(filter $(E2E_SKIP_CLEANUP),true),-e2e.skip-resource-cleanup) \
-	      -e2e.helm-chart-dir=$(REPO_ROOT)/$(CHART_DIR)  \
+	      -e2e.helm-chart-dir=$(REPO_ROOT)/charts/vgpu-token-operator  \
 	      -e2e.helm-oci-repository=$(OCI_REPOSITORY) \
 	      -e2e.helm-chart-version=v$(shell gojq -r .version dist/metadata.json)
 	go tool cover \
-	  -html=coverage-e2e.out \
+	  -html=$(REPO_ROOT)/coverage-e2e.out \
 	  -o coverage-e2e.html
