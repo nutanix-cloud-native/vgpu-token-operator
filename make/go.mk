@@ -69,7 +69,7 @@ test.e2e: cluster-e2e-templates-v1beta1 build-snapshot release-snapshot-images
 	    --keep-going \
 	    $(if $(filter $(E2E_VERBOSE),true),--vv) \
 	    --covermode=atomic \
-	    --coverprofile $(REPO_ROOT)/coverage-e2e.out \
+	    --coverprofile coverage-e2e.out \
 	    $(if $(filter $(E2E_DRYRUN), true),--dry-run) \
 	    --procs=1 \
 	    --compilers=1 \
@@ -80,6 +80,7 @@ test.e2e: cluster-e2e-templates-v1beta1 build-snapshot release-snapshot-images
 	    $(E2E_GINKGO_FLAGS) \
 	    --junit-report=junit-e2e.xml \
 	    --json-report=report-e2e.json \
+	    --output-dir=$(REPO_ROOT) \
 	    --tags e2e \
 	    test/e2e/... -- \
 	      -e2e.artifacts-folder="$(ARTIFACTS)" \
@@ -89,5 +90,5 @@ test.e2e: cluster-e2e-templates-v1beta1 build-snapshot release-snapshot-images
 	      -e2e.helm-oci-repository=$(OCI_REPOSITORY) \
 	      -e2e.helm-chart-version=v$(shell gojq -r .version dist/metadata.json)
 	go tool cover \
-	  -html=$(REPO_ROOT)/coverage-e2e.out \
+	  -html=coverage-e2e.out \
 	  -o coverage-e2e.html
