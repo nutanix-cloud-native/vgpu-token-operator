@@ -38,7 +38,7 @@ type VGPUTokenSpec struct {
 
 	// NodeSelector refers to label selectors for finding the correct nodes to propagate the token to
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:={"nvidia.com/vgpu.present": "true", "nvidia.com/gpu.deploy.driver": "pre-installed"}
+	// +kubebuilder:default:={"nvidia.com/vgpu.present": "true"}
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 

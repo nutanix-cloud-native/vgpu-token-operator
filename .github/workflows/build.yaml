@@ -145,3 +145,46 @@ jobs:
       - name: Run chart-testing (lint)
         run: |
           devbox run -- make helm-lint
+
+  e2e-tests:
+    runs-on:
+      - self-hosted-ncn-dind
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # See: https://github.com/DeterminateSystems/nix-installer-action/issues/68
+      - name: Install Nix on self-hosted ARC runners
+        uses: cachix/install-nix-action@V27
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.12.0
+        with:
+          skip-nix-installation: true
+
+      - name: Login to Harbor Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: harbor.eng.nutanix.com
+          username: ${{ secrets.HARBOR_USER }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+
+      - name: Run e2e tests
+        run: |
+          devbox run -- make test.e2e
+        env:
+          NUTANIX_GPU_NAME: "NVIDIA A40-4C"
+          SSH_PUBLIC_KEY_FOR_TESTS: ${{ vars.SSH_PUBLIC_KEY_FOR_TESTS }}
+          NUTANIX_USER: ${{ secrets.NUTANIX_USER }}
+          NUTANIX_PASSWORD: ${{ secrets.NUTANIX_PASSWORD }}
+          NUTANIX_ENDPOINT: ${{ secrets.NUTANIX_ENDPOINT }}
+          NUTANIX_PORT: "9440"
+          NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_CONTROL_PLANE: ${{ secrets.NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_CONTROL_PLANE }}
+          NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_GPU: ${{ secrets.NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_GPU }}
+          NUTANIX_SUBNET_NAME: ${{ vars.NUTANIX_SUBNET_NAME }}
+          NUTANIX_GPU_SUBNET_NAME: ${{ NUTANIX_GPU_SUBNET_NAME }}
+          VGPU_TOKEN_SECRET: ${{ secrets.VGPU_TOKEN_SECRET }}

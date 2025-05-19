@@ -65,6 +65,7 @@ func (r *VGPUTokenReconciler) reconcileNormal(
 	vgpuToken *nkpv1alpha1.VGPUToken,
 ) (ctrl.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
+	// write status as the last thing we do
 	defer func() {
 		if updateErr := r.Status().Update(ctx, vgpuToken); updateErr != nil {
 			log.Error(updateErr, "failed to update VGPUToken status")
@@ -79,32 +80,35 @@ func (r *VGPUTokenReconciler) reconcileNormal(
 		},
 		&secretForDaemonSet,
 	)
-	if err != nil {
-		log.Error(err, "failed to get secret")
-		cond := metav1.Condition{
-			Type:    nkpv1alpha1.ConditionTokenSecret,
-			Status:  metav1.ConditionFalse,
-			Message: err.Error(),
-			Reason:  nkpv1alpha1.ReasonTokenSecretFailed,
-		}
-		if apierrors.IsNotFound(err) {
-			cond.Reason = nkpv1alpha1.ReasonTokenSecretNotFound
-		}
-		meta.SetStatusCondition(&vgpuToken.Status.Conditions, cond)
-		return ctrl.Result{}, err
-	}
-	cond := metav1.Condition{
+	secretCond := metav1.Condition{
 		Type:    nkpv1alpha1.ConditionTokenSecret,
 		Status:  metav1.ConditionTrue,
 		Message: "found secret",
 		Reason:  nkpv1alpha1.ReasonTokenSecretRetrieved,
 	}
-	meta.SetStatusCondition(&vgpuToken.Status.Conditions, cond)
+	// sets the secret condition even in case of error
+	defer func() {
+		meta.SetStatusCondition(&vgpuToken.Status.Conditions, secretCond)
+	}()
+	if err != nil {
+		log.Error(err, "failed to get secret")
+		setCondition(
+			&secretCond,
+			metav1.ConditionFalse,
+			err.Error(),
+			nkpv1alpha1.ReasonTokenSecretFailed,
+		)
+		if apierrors.IsNotFound(err) {
+			secretCond.Reason = nkpv1alpha1.ReasonTokenSecretNotFound
+		}
+		return ctrl.Result{}, err
+	}
+
 	if err := controllerutil.SetOwnerReference(vgpuToken, &secretForDaemonSet, r.Scheme); err != nil {
 		errMsg := fmt.Sprintf("failed to set owner reference on secret %s", secretForDaemonSet.Name)
 		log.Error(err, errMsg)
 		setCondition(
-			&cond,
+			&secretCond,
 			metav1.ConditionFalse,
 			nkpv1alpha1.ReasonCreateFailed,
 			fmt.Sprintf("%s: %s", errMsg, err.Error()),
@@ -130,12 +134,16 @@ func (r *VGPUTokenReconciler) reconcileNormal(
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile daemonset %w", err)
 	}
-	cond = metav1.Condition{
+	daemonSetCond := metav1.Condition{
 		Type: nkpv1alpha1.ConditionPropagated,
 	}
+	// sets daemonset condition on status even if error occurs
+	defer func() {
+		meta.SetStatusCondition(&vgpuToken.Status.Conditions, daemonSetCond)
+	}()
 	if ds.Status.ObservedGeneration < ds.Generation {
 		setCondition(
-			&cond,
+			&daemonSetCond,
 			metav1.ConditionFalse,
 			nkpv1alpha1.ReasonDaemonSetUpdating,
 			"DaemonSet is processing updates",
@@ -148,21 +156,21 @@ func (r *VGPUTokenReconciler) reconcileNormal(
 	switch {
 	case desired == 0: // set none desired
 		setCondition(
-			&cond,
+			&daemonSetCond,
 			metav1.ConditionTrue,
 			nkpv1alpha1.ReasonNoneDesired,
 			"No replicas desired",
 		)
 	case available == 0: // set none ready
 		setCondition(
-			&cond,
+			&daemonSetCond,
 			metav1.ConditionFalse,
 			nkpv1alpha1.ReasonNoneReady,
 			fmt.Sprintf("desired %d but none available", desired),
 		)
 	case available < desired: // set partial ready
 		setCondition(
-			&cond,
+			&daemonSetCond,
 			metav1.ConditionFalse,
 			nkpv1alpha1.ReasonPartialReady,
 			fmt.Sprintf("desired %d but have %d available", desired, available),
@@ -170,7 +178,7 @@ func (r *VGPUTokenReconciler) reconcileNormal(
 		requeueAfter = time.Minute * 2
 	case desired == available: // set all ready
 		setCondition(
-			&cond,
+			&daemonSetCond,
 			metav1.ConditionTrue,
 			nkpv1alpha1.ReasonAllReady,
 			"All replicas ready",
