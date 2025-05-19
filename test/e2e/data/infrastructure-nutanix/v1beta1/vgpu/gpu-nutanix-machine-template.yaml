@@ -1,0 +1,31 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixMachineTemplate
+metadata:
+  name: "${CLUSTER_NAME}-vgpu-mt"
+spec:
+  template:
+    spec:
+      providerID: "nutanix://${CLUSTER_NAME}-m1"
+      # Supported options for boot type: legacy and uefi
+      # Defaults to legacy if not set
+      bootType: ${NUTANIX_MACHINE_BOOT_TYPE=legacy}
+      vcpusPerSocket: ${NUTANIX_MACHINE_VCPU_PER_SOCKET=1}
+      vcpuSockets: ${NUTANIX_MACHINE_VCPU_SOCKET=2}
+      memorySize: "${NUTANIX_MACHINE_MEMORY_SIZE=4Gi}"
+      systemDiskSize: "${NUTANIX_SYSTEMDISK_SIZE=40Gi}"
+      imageLookup:
+        baseOS: "${IMAGE_LOOKUP_BASE_OS}"
+        format: "${VGPU_IMAGE_LOOKUP_FORMAT}"
+      cluster:
+        type: name
+        name: "${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME_GPU}"
+      subnet:
+        - type: name
+          name: "${NUTANIX_GPU_SUBNET_NAME}"
+      gpus:
+        - type: name
+          name: "${NUTANIX_GPU_NAME}"

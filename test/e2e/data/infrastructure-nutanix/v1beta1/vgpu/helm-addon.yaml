@@ -1,0 +1,44 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: addons.cluster.x-k8s.io/v1alpha1
+kind: HelmChartProxy
+metadata:
+  name: gpu-operator
+spec:
+  clusterSelector:
+    matchLabels:
+      gpu-operator: "true"
+  releaseName: gpu-operator
+  repoURL: https://helm.ngc.nvidia.com/nvidia
+  chartName: gpu-operator
+  namespace: gpu-operator
+  valuesTemplate: |
+    nfd:
+      enabled: true
+    driver:
+      enabled: false
+    devicePlugin:
+      config:
+        create: false
+      repository: nvcr.io/nvidia
+      version: v0.17.1
+    toolkit:
+      version: v1.17.5-ubuntu20.04
+    gfd:
+      enabled: true
+      version: v0.17.1
+    dcgm:
+      enabled: true
+      version: 4.1.1-2-ubuntu22.04
+    dcgmExporter:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+      version: 4.1.1-4.0.4-ubuntu22.04
+    validator:
+      repository: nvcr.io/nvidia/cloud-native
+      version: v25.3.0
+    operator:
+      repository: nvcr.io/nvidia
+      version: v25.3.0
