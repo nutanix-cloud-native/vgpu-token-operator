@@ -1,3 +1,6 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 {{- range .Values.vgpuTokenObjects }}
 apiVersion: vgpu-token.nutanix.com/v1alpha1
 kind: VGPUToken
@@ -16,7 +19,7 @@ spec:
   hostDirectoryPath: {{ .hostDirectoryPath }}
   {{- end }}
   {{- if and .nodeSelector }}
-  nodeSelector: 
+  nodeSelector:
     {{- toYaml .nodeSelector | nindent 4 }}
   {{- end }}
 {{- end }}
