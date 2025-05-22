@@ -23,6 +23,7 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -168,42 +169,44 @@ var _ = Describe("Nutanix Virtual GPU", Label("vgpu-token-operator"), func() {
 				cluster.Namespace,
 				cluster.Name,
 			)
+			workloadClient := selfHostedClusterProxy.GetClient()
 
-			By("Deploying vgpu helm chart")
-			err := helm.DeployVGPUChart(selfHostedClusterProxy.GetKubeconfigPath(), helmChartDir, vgpuImageOCIRepository, helmChartVersion)
-			Expect(err).ToNot(HaveOccurred(), "expected to install helm chart")
-
-			By("Creating VGPU token secret")
 			tokenValue := os.Getenv("VGPU_TOKEN_SECRET")
-			Expect(tokenValue).ToNot(BeEmpty(), "VGPU_TOKEN_SECRET env var not set")
-			secret := corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "client-config-token",
-					Namespace: helm.Namespace,
-				},
-				StringData: map[string]string{
-					"client_configuration_token.tok": tokenValue,
+			Expect(tokenValue).ToNot(BeEmpty())
+			tokenCRName := "test-token"
+			secretName := "client-config-token"
+			vgpuSecretsData := []map[string]string{
+				{
+					"secretName": secretName,
+					"value":      tokenValue,
 				},
 			}
-			workloadClient := selfHostedClusterProxy.GetClient()
-			err = workloadClient.Create(ctx, &secret)
-			Expect(err).ToNot(HaveOccurred(), "expected to create secret on workload")
 
-			By("Creating VGPUToken object")
-			tokenName := "test-token"
+			vgpuTokenObjectsData := []map[string]interface{}{
+				{
+					"tokenName":       tokenCRName,
+					"tokenSecretName": secretName,
+				},
+			}
+
+			combinedValues := map[string]interface{}{
+				"vgpuTokens":       vgpuSecretsData,
+				"vgpuTokenObjects": vgpuTokenObjectsData,
+			}
+
+			combinedValuesJSON, err := json.Marshal(combinedValues)
+			Expect(err).NotTo(HaveOccurred())
+
 			token := nkpv1alpha1.VGPUToken{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      tokenName,
+					Name:      tokenCRName,
 					Namespace: helm.Namespace,
 				},
-				Spec: nkpv1alpha1.VGPUTokenSpec{
-					TokenSecretRef: corev1.LocalObjectReference{
-						Name: secret.Name,
-					},
-				},
 			}
-			err = workloadClient.Create(ctx, &token)
-			Expect(err).ToNot(HaveOccurred(), "exepected to create token object on remote")
+
+			By("Deploying vgpu helm chart")
+			err = helm.DeployVGPUChart(selfHostedClusterProxy.GetKubeconfigPath(), helmChartDir, vgpuImageOCIRepository, helmChartVersion, string(combinedValuesJSON))
+			Expect(err).ToNot(HaveOccurred(), "expected to install helm chart")
 
 			By("Checking token status")
 			Eventually(func() []metav1.Condition {

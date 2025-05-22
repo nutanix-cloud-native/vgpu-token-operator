@@ -24,7 +24,7 @@ const (
 	releaseName = "vgpu-token-operator"
 )
 
-func DeployVGPUChart(kubeconfig, chartDir, ociRepository, version string) error {
+func DeployVGPUChart(kubeconfig, chartDir, ociRepository, version string, combinedValuesJSON string) error {
 	settings := &genericclioptions.ConfigFlags{
 		Namespace:  ptr.To(Namespace),
 		KubeConfig: ptr.To(kubeconfig),
@@ -45,6 +45,9 @@ func DeployVGPUChart(kubeconfig, chartDir, ociRepository, version string) error 
 			fmt.Sprintf("controllerManager.container.image.repository=%s/vgpu-token-operator", ociRepository),
 			fmt.Sprintf("controllerManager.container.image.tag=%s", version),
 			fmt.Sprintf("vgpuCopy.image=%s/vgpu-token-copier:%s", ociRepository, version),
+		},
+		JSONValues: []string{
+			combinedValuesJSON,
 		},
 	}
 

@@ -41,6 +41,60 @@ controllerManager:
 vgpuCopy:
   image: "ghcr.io/nutanix-cloud-native/vgpu-token-copier:latest"
 
+# Configuration for vGPU client configuration tokens.
+#
+# To add a new vGPU secret:
+# - Add a new entry under 'vgpuTokenSecrets'.
+# - Each entry requires:
+#   - 'secretName': The desired name of the Kubernetes Secret.
+#   - 'value': The plain-text token string that will be stored in the secret.
+#
+# Example:
+# vgpuTokenSecrets:
+#   - secretName: my-first-vgpu-token
+#     value: "your-actual-vgpu-token-string-123"
+vgpuTokenSecrets: []
+
+# Configuration for vGPU Token Custom Resources (VGPUToken).
+#
+# This allows you to define multiple vGPU token instances, each corresponding
+# to a VGPUToken custom resource in Kubernetes.
+#
+# To add a new vGPU token:
+# - Add a new entry under 'vgpuTokenObjects'.
+# - Each entry requires:
+#   - 'tokenName': The desired name for the VGPUToken custom resource.
+#   - 'tokenSecretName': The name of the Kubernetes Secret that holds the
+#                        actual vGPU token value (e.g., "my-vgpu-token-secret").
+#                        This secret must exist in the same namespace.
+# - Optional fields:
+#   - 'hostDirectoryPath': Specifies a host directory path for the vGPU token
+#                          that the grid service will read from. *NOTE: You likely
+#                          will not need to set this field.*
+#                          (e.g., "/mnt/vgpu-tokens/my-token")
+#   - 'nodeSelector': A map of key-value pairs to select specific nodes
+#                     where this vGPU token should be applied.
+#                     By default, the token is deployed with nodeSelector
+#                     { nvidia.com/vgpu.present: "true" }
+#                     This can be helpful to set if you have different
+#                     tokens for different sets of nodes.
+#                     If all of your nodes are OK to use the same token, you
+#                     can use the default and leave this field blank.
+#                     *NOTE: if you set this remember to set nvidia.com/vgpu.present: "true"
+#                     as another set, becaues it is not automatically added.
+# Example:
+# vgpuTokenObjects:
+#   - tokenName: my-first-vgpu-cr
+#     tokenSecretName: my-first-vgpu-secret
+#     hostDirectoryPath: "/opt/nutanix/vgpu/token1"
+#     nodeSelector:
+#       kubernetes.io/hostname: "prod-gpu-node-01"
+#       nvidia.com/vgpu.present: "true"
+#   - tokenName: another-vgpu-cr
+#     tokenSecretName: another-vgpu-secret
+#
+vgpuTokenObjects: []
+
 rbac:
   enable: true
 
