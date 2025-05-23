@@ -6,10 +6,6 @@ apiVersion: vgpu-token.nutanix.com/v1alpha1
 kind: VGPUToken
 metadata:
   name: {{ .tokenName }}
-  annotations:
-    "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-weight": "1"
-    "helm.sh/hook-delete-policy": before-hook-creation
   namespace: {{ $.Release.Namespace }}
   labels:
     app.kubernetes.io/instance: {{ $.Release.Name }}
@@ -19,11 +15,9 @@ spec:
   {{- if and .hostDirectoryPath }}
   hostDirectoryPath: {{ .hostDirectoryPath }}
   {{- end }}
-  {{- if and .hostDirectoryPath }}
-  hostDirectoryPath: {{ .hostDirectoryPath }}
-  {{- end }}
   {{- if and .nodeSelector }}
   nodeSelector:
-    {{- toYaml .nodeSelector | nindent 4 }}
+{{- toYaml .nodeSelector | nindent 4 }}
   {{- end }}
+---
 {{- end }}

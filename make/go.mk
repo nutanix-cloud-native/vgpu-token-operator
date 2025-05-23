@@ -15,7 +15,7 @@ go-generate:
 		output:rbac:artifacts:config=charts/vgpu-token-operator/templates/rbac
 	controller-gen paths="./api/v1alpha1"  \
 	  object:headerFile="hack/license-header.go.txt" output:object:artifacts:config=/api/v1alpha1 \
-	  crd:headerFile=hack/license-header.yaml.txt output:crd:artifacts:config=charts/vgpu-token-operator/templates/crd
+	  crd:headerFile=hack/license-header.yaml.txt output:crd:artifacts:config=charts/vgpu-token-operator/crds
 
 .PHONY: test
 test: go-generate
