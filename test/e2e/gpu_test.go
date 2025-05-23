@@ -181,21 +181,20 @@ var _ = Describe("Nutanix Virtual GPU", Label("vgpu-token-operator"), func() {
 					"value":      tokenValue,
 				},
 			}
-
+			vgpuSecretsDataStr, err := json.Marshal(vgpuSecretsData)
+			Expect(err).ToNot(HaveOccurred())
 			vgpuTokenObjectsData := []map[string]interface{}{
 				{
 					"tokenName":       tokenCRName,
 					"tokenSecretName": secretName,
 				},
 			}
-
+			vgpuTokenDataStr, err := json.Marshal(vgpuTokenObjectsData)
+			Expect(err).ToNot(HaveOccurred())
 			combinedValues := map[string]interface{}{
-				"vgpuTokens":       vgpuSecretsData,
-				"vgpuTokenObjects": vgpuTokenObjectsData,
+				"vgpuTokenSecrets": vgpuSecretsDataStr,
+				"vgpuTokenObjects": vgpuTokenDataStr,
 			}
-
-			combinedValuesJSON, err := json.Marshal(combinedValues)
-			Expect(err).NotTo(HaveOccurred())
 
 			token := nkpv1alpha1.VGPUToken{
 				ObjectMeta: metav1.ObjectMeta{
@@ -205,7 +204,13 @@ var _ = Describe("Nutanix Virtual GPU", Label("vgpu-token-operator"), func() {
 			}
 
 			By("Deploying vgpu helm chart")
-			err = helm.DeployVGPUChart(selfHostedClusterProxy.GetKubeconfigPath(), helmChartDir, vgpuImageOCIRepository, helmChartVersion, string(combinedValuesJSON))
+			err = helm.DeployVGPUChart(
+				selfHostedClusterProxy.GetKubeconfigPath(),
+				helmChartDir,
+				vgpuImageOCIRepository,
+				helmChartVersion,
+				combinedValues,
+			)
 			Expect(err).ToNot(HaveOccurred(), "expected to install helm chart")
 
 			By("Checking token status")
@@ -218,7 +223,7 @@ var _ = Describe("Nutanix Virtual GPU", Label("vgpu-token-operator"), func() {
 					Expect(err).ShouldNot(HaveOccurred(), "unexpected error when getting token.")
 				}
 				return token.Status.Conditions
-			}).Should(
+			}).WithTimeout(5 * time.Minute).WithPolling(time.Second * 5).Should(
 				ContainElement(
 					gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 						"Type":   Equal(nkpv1alpha1.ConditionPropagated),

@@ -15,6 +15,7 @@ import (
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
+	"helm.sh/helm/v3/pkg/strvals"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/utils/ptr"
 )
@@ -24,7 +25,7 @@ const (
 	releaseName = "vgpu-token-operator"
 )
 
-func DeployVGPUChart(kubeconfig, chartDir, ociRepository, version string, combinedValuesJSON string) error {
+func DeployVGPUChart(kubeconfig, chartDir, ociRepository, version string, extraValuesMap map[string]interface{}) error {
 	settings := &genericclioptions.ConfigFlags{
 		Namespace:  ptr.To(Namespace),
 		KubeConfig: ptr.To(kubeconfig),
@@ -46,9 +47,6 @@ func DeployVGPUChart(kubeconfig, chartDir, ociRepository, version string, combin
 			fmt.Sprintf("controllerManager.container.image.tag=%s", version),
 			fmt.Sprintf("vgpuCopy.image=%s/vgpu-token-copier:%s", ociRepository, version),
 		},
-		JSONValues: []string{
-			combinedValuesJSON,
-		},
 	}
 
 	envSettings := cli.New()
@@ -57,6 +55,12 @@ func DeployVGPUChart(kubeconfig, chartDir, ociRepository, version string, combin
 	}
 	providers := getter.All(envSettings)
 	vals, err := valOpts.MergeValues(providers)
+	for k, v := range extraValuesMap {
+		// ParseJSON expects a string with format k1=v1
+		if err := strvals.ParseJSON(fmt.Sprintf("%s=%s", k, v), vals); err != nil {
+			return fmt.Errorf("failed parsing --set-json data %s=%s", k, v)
+		}
+	}
 	if err != nil {
 		return fmt.Errorf("failed to merge values: %w", err)
 	}
@@ -65,6 +69,7 @@ func DeployVGPUChart(kubeconfig, chartDir, ociRepository, version string, combin
 	installClient.Namespace = Namespace
 	installClient.CreateNamespace = true
 	installClient.Wait = true
+	installClient.Atomic = true
 	installClient.ReleaseName = releaseName
 	installClient.Timeout = time.Minute * 10
 	_, err = installClient.Run(chart, vals)
