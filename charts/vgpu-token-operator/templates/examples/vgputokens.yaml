@@ -1,0 +1,23 @@
+# Copyright 2025 Nutanix. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+{{- range .Values.vgpuTokenObjects }}
+apiVersion: vgpu-token.nutanix.com/v1alpha1
+kind: VGPUToken
+metadata:
+  name: {{ .tokenName }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+spec:
+  tokenSecretRef:
+    name: {{ .tokenSecretName }}
+  {{- if .hostDirectoryPath }}
+  hostDirectoryPath: {{ .hostDirectoryPath }}
+  {{- end }}
+  {{- if .nodeSelector }}
+  nodeSelector:
+{{- toYaml .nodeSelector | nindent 4 }}
+  {{- end }}
+---
+{{- end }}
