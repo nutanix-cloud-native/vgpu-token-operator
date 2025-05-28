@@ -40,11 +40,12 @@ func DeployVGPUChart(kubeconfig, chartDir, ociRepository, version string, extraV
 	if err != nil {
 		log.Fatalf("Failed to load chart: %v", err)
 	}
+	chart.Metadata.AppVersion = version
+	chart.Metadata.Version = version
 
 	valOpts := &values.Options{
 		StringValues: []string{
 			fmt.Sprintf("controllerManager.container.image.repository=%s/vgpu-token-operator", ociRepository),
-			fmt.Sprintf("controllerManager.container.image.tag=%s", version),
 			fmt.Sprintf("vgpuCopy.image=%s/vgpu-token-copier:%s", ociRepository, version),
 		},
 	}

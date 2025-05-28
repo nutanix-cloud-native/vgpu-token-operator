@@ -11,7 +11,6 @@ helm-install-snapshot:
 helm-install-snapshot:  release-snapshot-images helm-dependencies
 	helm upgrade --install $(RELEASE_NAME) $(CHART_DIR) \
 		--set-string controllerManager.container.image.repository=$(OCI_REPOSITORY)/vgpu-token-operator \
-		--set-string controllerManager.container.image.tag=v$(shell gojq -r .version dist/metadata.json) \
 		--set-string vgpuCopy.image=${OCI_REPOSITORY}/vgpu-token-copier:v$(shell gojq -r .version dist/metadata.json)  \
 		--namespace $(NAMESPACE) \
 		--create-namespace \
