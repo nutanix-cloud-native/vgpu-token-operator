@@ -41,20 +41,6 @@ controllerManager:
 vgpuCopy:
   image: "ghcr.io/nutanix-cloud-native/vgpu-token-copier:latest"
 
-# Configuration for vGPU client configuration tokens.
-#
-# To add a new vGPU secret:
-# - Add a new entry under 'vgpuTokenSecrets'.
-# - Each entry requires:
-#   - 'secretName': The desired name of the Kubernetes Secret.
-#   - 'value': The plain-text token string that will be stored in the secret.
-#
-# Example:
-# vgpuTokenSecrets:
-#   - secretName: my-first-vgpu-token
-#     value: "your-actual-vgpu-token-string-123"
-vgpuTokenSecrets: []
-
 # Configuration for vGPU Token Custom Resources (VGPUToken).
 #
 # This allows you to define multiple vGPU token instances, each corresponding

@@ -173,26 +173,27 @@ var _ = Describe("Nutanix Virtual GPU", Label("vgpu-token-operator"), func() {
 
 			tokenValue := os.Getenv("VGPU_TOKEN_SECRET")
 			Expect(tokenValue).ToNot(BeEmpty())
-			tokenCRName := "test-token"
-			secretName := "client-config-token"
-			vgpuSecretsData := []map[string]string{
-				{
-					"secretName": secretName,
-					"value":      tokenValue,
+			secret := corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "client-config-token",
+					Namespace: helm.Namespace,
+				},
+				StringData: map[string]string{
+					"client_configuration_token.tok": tokenValue,
 				},
 			}
-			vgpuSecretsDataStr, err := json.Marshal(vgpuSecretsData)
-			Expect(err).ToNot(HaveOccurred())
+			err := workloadClient.Create(ctx, &secret)
+			Expect(err).ToNot(HaveOccurred(), "expected to create secret on workload")
+			tokenCRName := "test-token"
 			vgpuTokenObjectsData := []map[string]interface{}{
 				{
 					"tokenName":       tokenCRName,
-					"tokenSecretName": secretName,
+					"tokenSecretName": secret.Name,
 				},
 			}
 			vgpuTokenDataStr, err := json.Marshal(vgpuTokenObjectsData)
 			Expect(err).ToNot(HaveOccurred())
 			combinedValues := map[string]interface{}{
-				"vgpuTokenSecrets": vgpuSecretsDataStr,
 				"vgpuTokenObjects": vgpuTokenDataStr,
 			}
 

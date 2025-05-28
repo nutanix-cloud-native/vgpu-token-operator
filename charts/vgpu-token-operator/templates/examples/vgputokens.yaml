@@ -12,10 +12,10 @@ metadata:
 spec:
   tokenSecretRef:
     name: {{ .tokenSecretName }}
-  {{- if and .hostDirectoryPath }}
+  {{- if .hostDirectoryPath }}
   hostDirectoryPath: {{ .hostDirectoryPath }}
   {{- end }}
-  {{- if and .nodeSelector }}
+  {{- if .nodeSelector }}
   nodeSelector:
 {{- toYaml .nodeSelector | nindent 4 }}
   {{- end }}
