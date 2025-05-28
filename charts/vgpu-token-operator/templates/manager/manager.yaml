@@ -34,10 +34,10 @@ spec:
             - "--leader-elect"
             - "--metrics-bind-address=:8443"
             - "--health-probe-bind-address=:8081"
-            - "--vgpu-propagator-image={{ .Values.vgpuCopy.image }}"
+            - "--vgpu-propagator-image={{ .Values.vgpuCopy.repository }}:{{ .Values.vgpuCopy.tag | default .Chart.AppVersion }}"
           command:
             - /ko-app/cmd
-          image: {{ .Values.controllerManager.container.image.repository }}:{{ .Values.controllerManager.container.image.tag }}
+          image: {{ .Values.controllerManager.container.image.repository }}:{{ .Values.controllerManager.container.image.tag | default .Chart.AppVersion }}
           {{- if .Values.controllerManager.container.env }}
           env:
             {{- range $key, $value := .Values.controllerManager.container.env }}
