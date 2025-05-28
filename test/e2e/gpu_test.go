@@ -182,8 +182,6 @@ var _ = Describe("Nutanix Virtual GPU", Label("vgpu-token-operator"), func() {
 					"client_configuration_token.tok": tokenValue,
 				},
 			}
-			err := workloadClient.Create(ctx, &secret)
-			Expect(err).ToNot(HaveOccurred(), "expected to create secret on workload")
 			tokenCRName := "test-token"
 			vgpuTokenObjectsData := []map[string]interface{}{
 				{
@@ -214,6 +212,9 @@ var _ = Describe("Nutanix Virtual GPU", Label("vgpu-token-operator"), func() {
 			)
 			Expect(err).ToNot(HaveOccurred(), "expected to install helm chart")
 
+			By("Creating the secret")
+			err = workloadClient.Create(ctx, &secret)
+			Expect(err).ToNot(HaveOccurred(), "expected to create secret on workload")
 			By("Checking token status")
 			Eventually(func() []metav1.Condition {
 				err = workloadClient.Get(ctx, ctrlclient.ObjectKeyFromObject(&token), &token)
