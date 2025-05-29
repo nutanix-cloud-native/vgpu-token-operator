@@ -6,7 +6,7 @@ controllerManager:
   container:
     image:
       repository: controller
-      tag: latest
+      tag: ""
     resources:
       limits:
         cpu: 500m
@@ -39,7 +39,8 @@ controllerManager:
   serviceAccountName: vgpu-token-operator-controller-manager
 
 vgpuCopy:
-  image: "ghcr.io/nutanix-cloud-native/vgpu-token-copier:latest"
+  repository: "ghcr.io/nutanix-cloud-native/vgpu-token-copier"
+  tag: ""
 
 # Configuration for vGPU Token Custom Resources (VGPUToken).
 #
