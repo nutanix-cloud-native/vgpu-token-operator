@@ -40,14 +40,74 @@ Things you probably have if you're looking at this project.
 
 To deploy helm chart to your cluster during development run
 
+_NOTE_: set `OCI_REPOSITORY`to a repository that you have push access to
+
 ```bash
 make helm-install-snapshot
 ```
 
-_NOTE_: set `OCI_REPOSITORY`to a repository that you have push access to
+### Creating the resources
 
-1. Create manifests
+1. Create the secret
+
+_NOTE_: It is critical that the key for the token value is `client_configuration_token.tok`. Otherwise the mounts for the daemonset will fail.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: client-config-token
+  namespace: vgpu-system
+stringData:
+  client_configuration_token.tok: "${VGPU_TOKEN_VALUE}"
+```
+
+1. Create the VGPUToken object, setting `tokenSecretRef` to the same name as the secret created above
+
+```yaml
+apiVersion: vgpu-token.nutanix.com/v1alpha1
+kind: VGPUToken
+metadata:
+  name: vgpu-token
+  namespace: vgpu-system
+spec:
+  tokenSecretRef:
+    name: client-config-token
+
+```
+
+After creating these resources the token secret should mount on the host at `/etc/nvidia/ClientConfigToken/client_configuration_token.tok`
+
+Finally, we can verify the license status by creating a pod to verify the license status by running `nvidia-smi` and checking the license status
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  generateName: gpu-pod-
+  labels:
+    test: gpu-pod
+spec:
+  restartPolicy: OnFailure
+  containers:
+  - name: gpu-pod
+    image: nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda12.5.0
+    command: ["nvidia-smi", "-q"]
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+  nodeSelector:
+    "nvidia.com/gpu.present": "true"
+  tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+```
+
+In the pod logs, you should see the product is Licensed.
 
 ```bash
-kubectl apply -f hack/examples/vgpu.yaml
+    vGPU Software Licensed Product
+        Product Name                      : NVIDIA Virtual Compute Server
+        License Status                    : Licensed (Expiry: 2025-6-5 15:22:24 GMT)
 ```
