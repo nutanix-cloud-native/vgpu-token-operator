@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 RELEASE_NAME := $(GITHUB_REPOSITORY)
-NAMESPACE := vgpu-system
+NAMESPACE ?= vgpu-system
 CHART_DIR := charts/$(RELEASE_NAME)
 OCI_REPOSITORY ?= harbor.eng.nutanix.com/nkp
 
@@ -11,6 +11,7 @@ helm-install-snapshot:
 helm-install-snapshot:  release-snapshot-images helm-dependencies
 	helm upgrade --install $(RELEASE_NAME) $(CHART_DIR) \
 		--set-string controllerManager.container.image.repository=$(OCI_REPOSITORY)/vgpu-token-operator \
+		--set-string controllerManager.container.image.tag="v$(shell gojq -r .version dist/metadata.json)"  \
 		--set-string vgpuCopy.repository="${OCI_REPOSITORY}/vgpu-token-copier" \
 		--set-string vgpuCopy.tag="v$(shell gojq -r .version dist/metadata.json)"  \
 		--namespace $(NAMESPACE) \
