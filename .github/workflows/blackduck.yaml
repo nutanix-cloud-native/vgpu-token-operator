@@ -7,33 +7,31 @@ on:
     branches:
       - main
     # Only scan when product source dependencies change.
-    paths:
-      - '**/go.mod'
-      # Ignore source dependencies of build tooling.
-      - '!docs/go.mod'
+    types:
+      - synchronize
   push:
-    branches:
-      - main
-    # Only scan when product source dependencies change.
-    paths:
-      - '**/go.mod'
-      # Ignore source dependencies of build tooling.
-      - '!docs/go.mod'
 
 jobs:
   security:
     if: github.repository == 'nutanix-cloud-native/vgpu-token-operator'
-    runs-on: ubuntu-24.04
+    runs-on:
+      - self-hosted-ncn-docker-medium
     permissions:
       pull-requests: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Nix on self-hosted ARC runners
+        uses: cachix/install-nix-action@V27
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.13.0
         with:
-          enable-cache: true
+          skip-nix-installation: true
 
       - name: Go cache
         uses: actions/cache@v4
