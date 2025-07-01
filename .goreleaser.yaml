@@ -50,7 +50,7 @@ builds:
           export KO_DOCKER_REPO="ko.local/{{ .ProjectName }}"
           if [ {{ .IsSnapshot }} == true ] && [ {{ .Runtime.Goarch }} == {{ .Arch }} ]; then
                 if [ "${GORELEASER_PUSH_SNAPSHOT_IMAGES}" == true ]; then
-                  KO_DOCKER_REPO=harbor.eng.nutanix.com/nkp/{{ .ProjectName }}
+                  KO_DOCKER_REPO={{ .Env.OCI_REPOSITORY }}/{{ .ProjectName }}
                 fi
                 ko build \
                   --bare \
@@ -65,7 +65,7 @@ builds:
           fi'
 dockers:
   - image_templates:
-      - '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}harbor.eng.nutanix.com/nkp{{ else }}docker.io/mesosphere{{ end }}/vgpu-token-copier:v{{ trimprefix .Version "v" }}-amd64'
+      - '{{ .Env.OCI_REPOSITORY }}/vgpu-token-copier:v{{ trimprefix .Version "v" }}-amd64'
     use: buildx
     dockerfile: ./docker/Dockerfile.tokencopy
     extra_files:
@@ -83,7 +83,7 @@ dockers:
       - '--label=org.opencontainers.image.version=v{{ trimprefix .Version "v" }}'
       - "--label=org.opencontainers.image.source={{.GitURL}}"
   - image_templates:
-      - '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}harbor.eng.nutanix.com/nkp{{ else }}docker.io/mesosphere{{ end }}/vgpu-token-copier:v{{ trimprefix .Version "v" }}-arm64'
+      - '{{ .Env.OCI_REPOSITORY }}/vgpu-token-copier:v{{ trimprefix .Version "v" }}-arm64'
     use: buildx
     dockerfile: ./docker/Dockerfile.tokencopy
     extra_files:
@@ -102,11 +102,10 @@ dockers:
       - "--label=org.opencontainers.image.source={{.GitURL}}"
 
 docker_manifests:
-  - name_template: '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}harbor.eng.nutanix.com/nkp/vgpu-token-copier:v{{ trimprefix .Version "v" }}{{ else }}docker.io/mesosphere/vgpu-token-copier:v{{ trimprefix .Version "v" }}{{ end }}'
-    skip_push: '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}false{{else}}true{{end}}'
+  - name_template: '{{ .Env.OCI_REPOSITORY }}/vgpu-token-copier:v{{ trimprefix .Version "v" }}'
     image_templates:
-      - '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}harbor.eng.nutanix.com/nkp/vgpu-token-copier:v{{ trimprefix .Version "v" }}-arm64{{ else }}docker.io/mesosphere/vgpu-token-copier-arm64{{ end }}'
-      - '{{ if eq .Env.GORELEASER_PUSH_SNAPSHOT_IMAGES "true" }}harbor.eng.nutanix.com/nkp/vgpu-token-copier:v{{ trimprefix .Version "v" }}-amd64{{ else }}docker.io/mesosphere/vgpu-token-copier:v{{ trimprefix .Version "v" }}-amd64{{ end }}'
+      - '{{ .Env.OCI_REPOSITORY }}/vgpu-token-copier:v{{ trimprefix .Version "v" }}-arm64'
+      - '{{ .Env.OCI_REPOSITORY }}/vgpu-token-copier:v{{ trimprefix .Version "v" }}-amd64'
 
 kos:
   - id: vgpu-token-operator
@@ -121,7 +120,7 @@ kos:
       - linux/amd64
       - linux/arm64
     repositories:
-      - 'docker.io/mesosphere/{{ .ProjectName }}'
+      - 'ghcr.io/nutanix-cloud-native/{{ .ProjectName }}'
     bare: true
     disable: "{{ .IsSnapshot }}"
     creation_time: "{{.CommitTimestamp}}"

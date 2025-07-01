@@ -47,6 +47,7 @@ func DeployVGPUChart(kubeconfig, chartDir, ociRepository, version string, extraV
 		StringValues: []string{
 			fmt.Sprintf("controllerManager.container.image.repository=%s/vgpu-token-operator", ociRepository),
 			fmt.Sprintf("vgpuCopy.repository=%s/vgpu-token-copier", ociRepository),
+			fmt.Sprintf("vgpuCopy.tag=%s-amd64", version),
 		},
 	}
 

@@ -56,7 +56,9 @@ cluster-e2e-templates-v1beta1: ## Generate cluster templates for v1beta1
 	kustomize build $(E2E_TEMPLATES)/v1beta1/vgpu --load-restrictor LoadRestrictionsNone > $(E2E_TEMPLATES)/v1beta1/cluster-template-vgpu.yaml
 
 .PHONY: test.e2e
-test.e2e: cluster-e2e-templates-v1beta1 build-snapshot release-snapshot-images
+test.e2e: export OCI_REPOSITORY=harbor.eng.nutanix.com/nkp
+test.e2e: export GORELEASER_PUSH_SNAPSHOT_IMAGES=true
+test.e2e: cluster-e2e-templates-v1beta1 build-snapshot release-snapshot
 		env CNI=$(CNI_PATH_CALICO) \
 	  envsubst -no-unset -no-empty -i '$(E2E_CONF_FILE_TEMPLATE)' -o '$(E2E_CONF_FILE)'
 	  ginkgo run \
