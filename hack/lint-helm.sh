@@ -54,6 +54,6 @@ kind load docker-image \
 ct install \
   --config "$CT_CONFIG" \
   --helm-extra-set-args \
-  "--set-string controllerManager.container.image.repository=${IMAGE_REPO} --set-string controllerManager.container.image.tag=v${IMAGE_TAG} --set-string vgpuCopy.image=${COPY_IMAGE_REPO}:v${IMAGE_TAG}"
+  "--set-string controllerManager.container.image.repository=${IMAGE_REPO} --set-string controllerManager.container.image.tag=v${IMAGE_TAG} --set-string vgpuCopy.image=${COPY_IMAGE_REPO}:v${IMAGE_TAG}-amd64"
 
 echo "Chart testing completed successfully!"
