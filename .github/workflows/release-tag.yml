@@ -31,17 +31,7 @@ jobs:
       - name: Install devbox
         uses: jetify-com/devbox-install-action@v0.12.0
         with:
-          enable-cache: true
-
-      - name: Go cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          skip-nix-installation: true
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
