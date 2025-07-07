@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.3 (2025-07-07)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* fix: adds GORELEASER_PUSH_SNAPSHOT_IMAGES envvar by @faiq in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/30
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/vgpu-token-operator/compare/v1.0.2...v1.0.3
+
 ## 1.0.2 (2025-07-07)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
