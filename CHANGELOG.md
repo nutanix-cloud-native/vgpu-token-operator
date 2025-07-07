@@ -1,0 +1,18 @@
+# Changelog
+
+## 0.1.0 (2025-07-01)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* chore: small documentation fixes and helm fixes by @faiq in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/20
+* feat: adding blackduck scan by @legacyrj in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/21
+* fix: blackduck scan fix by @legacyrj in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/22
+* ci: cleans up goreleaser files and things that need it by @faiq in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/23
+* chore: adds NOTICES file by @faiq in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/24
+
+## New Contributors
+* @legacyrj made their first contribution in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/21
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/vgpu-token-operator/commits/v0.1.0
