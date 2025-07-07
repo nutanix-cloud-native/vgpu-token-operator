@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.1 (2025-07-07)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* fix: release tag action by @faiq in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/25
+* fix: release please manifest by @faiq in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/26
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/vgpu-token-operator/compare/v1.0.0...v1.0.1
+
 ## 0.1.0 (2025-07-01)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
