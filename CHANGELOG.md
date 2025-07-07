@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 (2025-07-01)
+## 0.1.0 (2025-07-01)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
 
@@ -15,4 +15,4 @@
 ## New Contributors
 * @legacyrj made their first contribution in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/21
 
-**Full Changelog**: https://github.com/nutanix-cloud-native/vgpu-token-operator/commits/v1.0.0
+**Full Changelog**: https://github.com/nutanix-cloud-native/vgpu-token-operator/commits/v0.1.0
