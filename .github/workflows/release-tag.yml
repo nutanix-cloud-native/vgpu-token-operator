@@ -20,8 +20,7 @@ defaults:
 
 jobs:
   release-tag:
-    runs-on:
-      - self-hosted-ncn-docker-medium
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,9 +28,19 @@ jobs:
           fetch-depth: 0
 
       - name: Install devbox
-        uses: jetify-com/devbox-install-action@v0.12.0
+        uses: jetify-com/devbox-install-action@v0.13.0
         with:
-          skip-nix-installation: true
+          enable-cache: true
+
+      - name: Go cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
