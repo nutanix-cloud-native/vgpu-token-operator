@@ -54,7 +54,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OCI_REPOSITORY: ghcr.io/nutanix-cloud-native
-          GORELEASER_PUSH_SNAPSHOT_IMAGES: false
+          GORELEASER_PUSH_SNAPSHOT_IMAGES: true
 
       - name: Package Helm chart and attach to release
         env:
