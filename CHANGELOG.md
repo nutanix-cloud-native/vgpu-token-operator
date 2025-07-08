@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.5 (2025-07-08)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* fix: use explict name when building ko image by @faiq in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/34
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/vgpu-token-operator/compare/v1.0.4...v1.0.5
+
 ## 1.0.4 (2025-07-07)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
