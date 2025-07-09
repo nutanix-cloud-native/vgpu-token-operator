@@ -4,7 +4,7 @@ set -exou pipefail
 CT_CONFIG="charts/ct-config.yaml"
 export KIND_CLUSTER_NAME="chart-testing"
 IMAGE_REPO="ko.local/vgpu-token-operator"
-COPY_IMAGE_REPO="docker.io/mesosphere/vgpu-token-copier"
+COPY_IMAGE_REPO="ghcr.io/nutanix-cloud-native/vgpu-token-copier"
 VERSION=$(gojq -r .version dist/metadata.json)
 ARCH=$(go env GOARCH)
 IMAGE_TAG="${VERSION}-${ARCH}"
