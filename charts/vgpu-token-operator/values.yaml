@@ -5,7 +5,7 @@ controllerManager:
   replicas: 1
   container:
     image:
-      repository: controller
+      repository: ghcr.io/nutanix-cloud-native/vgpu-token-operator
       tag: ""
     resources:
       limits:
