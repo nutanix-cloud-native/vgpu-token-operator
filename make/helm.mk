@@ -27,5 +27,6 @@ helm-dependencies:  ## Update Helm dependencies
 	helm dependency update $(CHART_DIR)
 
 .PHONY: helm-lint
+helm-lint: export OCI_REPOSITORY=ghcr.io/nutanix-cloud-native
 helm-lint: build-snapshot
 	./hack/lint-helm.sh
