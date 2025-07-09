@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.6 (2025-07-09)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* fix: adds small modifications to release process and default values  by @faiq in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/36
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/vgpu-token-operator/compare/v1.0.5...v1.0.6
+
 ## 1.0.5 (2025-07-08)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
