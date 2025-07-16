@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.7 (2025-07-16)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* fix: use same glob for oci registry upload and fix OCI issue by @faiq in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/38
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/vgpu-token-operator/compare/v1.0.6...v1.0.7
+
 ## 1.0.6 (2025-07-09)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
