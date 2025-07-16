@@ -65,5 +65,5 @@ jobs:
                           --destination . \
                           --version ${{ github.ref_name }} \
                           --app-version ${{ github.ref_name }}
-          devbox run  -- echo "${GITHUB_TOKEN}" |  helm registry login ghcr.io --username ${{ github.actor }} --password-stdin &&  helm push vgpu-token-operator-chart-${{ github.ref_name }}.tgz  oci://ghcr.io/nutanix-cloud-native/vgpu-token-operator-charts
+          devbox run  -- echo "${GITHUB_TOKEN}" |  helm registry login ghcr.io --username ${{ github.actor }} --password-stdin &&  helm push vgpu-token-operator-*.tgz  oci://ghcr.io/nutanix-cloud-native/vgpu-token-operator-charts
           devbox run -- gh release upload ${{ github.ref_name }} vgpu-token-operator-*.tgz
