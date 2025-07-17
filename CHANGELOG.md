@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.8 (2025-07-17)
+
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+## What's Changed
+### Other Changes
+* fix: adds LICENSE by @faiq in https://github.com/nutanix-cloud-native/vgpu-token-operator/pull/40
+
+
+**Full Changelog**: https://github.com/nutanix-cloud-native/vgpu-token-operator/compare/v1.0.7...v1.0.8
+
 ## 1.0.7 (2025-07-16)
 
 <!-- Release notes generated using configuration in .github/release.yaml at main -->
